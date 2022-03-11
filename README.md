@@ -15,3 +15,5 @@
 - hexo g编译
 
 - hexo s本地启动服务
+
+- hexo d部署
