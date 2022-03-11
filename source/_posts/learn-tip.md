@@ -202,18 +202,6 @@ echo $SHELL
 ```
 
 ##### tip
-
-然后在 .zshrc 中增加：
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-1
-2
-3
-
-————————————————
-版权声明：本文为CSDN博主「亮子介」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
 原文链接：https://blog.csdn.net/henryhu712/article/details/85217165
 
 - 插件权限
@@ -427,7 +415,7 @@ sudo apt-get install flameshot
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20190710114019202.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dhbmd5dWFua2wxMjM=,size_16,color_FFFFFF,t_70)
 
-### zsh（终端）
+### zsh
 
 windows下好用的终端: consolez, [babun](https://github.com/babun/babun) +cmder,wsl
 
@@ -572,10 +560,21 @@ https://blog.csdn.net/henryhu712/article/details/85217165
 
 https://blog.csdn.net/geol200709/article/details/82117103
 
+```
 cd ~/ - -切到主目录
 git clone https://github.com/creationix/nvm.git .nvm - -克隆代码到文件夹 .nvm
 cd ~/.nvm - -进入nvm代码目录
 git checkout v0.33.11 - -切换到v0.33.11版本
+```
+
+或者
+
+https://docs.microsoft.com/zh-cn/windows/dev-environment/javascript/nodejs-on-wsl
+
+```
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+再输入nvm
+```
 
 设置国内镜像
 
@@ -679,14 +678,16 @@ Ctr+Shift +` 代码
 
 | 功能     | 热键（Windows / Linux）             | 热键（macOS）         |
 | :------- | :---------------------------------- | :-------------------- |
-| 强大     | Ctrl + B.                           | Command + B.          |
+| 强大     | Ctrl + B                            | Command + B.          |
 | 重点     | Ctrl + I                            | 命令+我               |
-| 强调     | Ctrl + U.                           | Command + U.          |
+| 强调     | Ctrl + U                            | Command + U.          |
 | 码       | Ctrl + Shift +`| Command + Shift +` |                       |
 | 罢工     | Alt + Shift + 5                     | Control + Shift +`    |
-| 超链接   | Ctrl + K.                           | Command + K.          |
+| 超链接   | Ctrl + K                            | Command + K.          |
 | 图片     | Ctrl + Shift + I                    | Command + Control + I |
 | 清除格式 | Ctrl + \                            | 命令+                 |
+
+- [说明文字](#jump)，<span id = "jump">跳转到的位置</span>。Ctrl + 点击链接
 
 ## 视图
 

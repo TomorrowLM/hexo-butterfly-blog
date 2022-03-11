@@ -7,75 +7,95 @@ category: react技术栈
 tags: [react,redux,router,hooks,生命周期,next]
 author: liming
 date: 25-September-2020
-sticky: 4
-swiper_index: 3
+sticky: 1
+swiper_index: 1
 swiper_desc: 关于一些react,redux,router,hooks,生命周期,next的总结！
 cover: https://i0.hippopx.com/photos/457/88/1021/microphone-boy-studio-screaming-preview.jpg
 ---
 
-# react源码
+# react原理
 
-http://t.kuick.cn/ZSM8
+## 虚拟DOM
 
-https://learn.kaikeba.com/video/405193
+https://www.jianshu.com/p/af0b398602bc
 
 ### **背景**
 
 前端主流框架 vue 和 react 中都使用了虚拟DOM（virtual DOM）技术，因为渲染真实DOM的开销是很大的，性能代价昂贵，比如有时候我们修改了某个数据，如果直接渲染到真实dom上会引起整个dom树的重绘和重排，而我们只需要更新修改过的那一小块dom而不要更新整个dom，这时使用diff算法能够帮助我们
 
-**DOM**
+#### **DOM`文档对象模型`**
 
-DOM全称`文档对象模型`，本质也是一个JS对象。每操作一次DOM都会对页面进行重新渲染，且新生成一颗DOM树。
+浏览器渲染引擎工作流程都差不多，大致分为5步，**创建DOM树——创建StyleRules——创建Render树——布局Layout——绘制Painting**
 
-DOM的本质： 浏览器中的概念，用js对象来表示页面上的元素，并提供操作DOM对象的API
+-   第一步，用HTML分析器，分析HTML元素，**构建一颗DOM树**(标记化和树构建)。
+-  第二步，用CSS分析器，分析CSS文件和元素上的inline样式，生成页面的样式表。
+-   第三步，将DOM树和样式表，关联起来，构建一颗Render树(这一过程又称为Attachment)。每个DOM节点都有**attach方法，接受样式信息**，返回一个render对象(又名renderer)。这些render对象最终会被构建成一颗Render树。
+-   第四步，有了Render树，浏览器开始布局，为每个Render树上的节点确定一个在显示屏上出现的精确坐标。
+-   第五步，Render树和节点显示坐标都有了，就调用每个节点**paint方法，把它们绘制**出来。
 
-**VDOM**
+**缺点**
 
-虚拟dom，通过JS模拟DOM中的真实节点对象，再通过特定的render方法将其渲染成真实的DOM节点。
+- 修改了某个数据，会直接渲染到真实dom上引起整个dom树的重绘和重排
+- 原生JS或JQ操作DOM时，浏览器会从构建DOM树开始从头到尾执行一遍流程。在一次操作中，我需要更新10个DOM节点，浏览器收到第一个DOM请求后并不知道还有9次更新操作，因此会马上执行流程，最终执行10次。
 
-vdom的本质:是框架中的概念，是程序员用js对象来模拟页面上的DOM和DOM 的嵌套
+#### **VDOM**
 
-## 虚拟DOM
+虚拟dom(JS模拟DOM中的真实节点对象)， 通过VDom和真实DOM的比对，再通过特定的render方法将其渲染成真实的DOM节点。
+
+ ![img](https://img2020.cnblogs.com/blog/1569466/202101/1569466-20210129140258056-1083022081.png) 
+
+**优点：**
+
+- 只会更新对应的节点。**diff算法**
+- 更新10个DOM节点，只会执行最后一次。**例如批处理**
 
 ### diff
 
-在Web开发中我们总需要将变化的数据实时反应到UI上，这时就需要对DOM进⾏操作。⽽复杂或频繁的DOM操作通常是性能瓶颈产⽣的原因
+传统 diff 算法通过循环递归对节点进行依次对比，效率低下，算法复杂度达到 O(n^3)，其中 n 是树中节点的总数。O(n^3) 到底有多可怕，这意味着如果要展示1000个节点，就要依次执行上十亿次的比较。
 
-React为此引⼊了虚拟DOM（Virtual DOM）的机制：在浏览器端⽤Javascript实现了⼀套DOM API。基于React进⾏开发时所有的DOM构造都是通过虚拟DOM进⾏，每当数据变化时，React都会重新构建整个DOM树，然后React将当前整个DOM树和上⼀次的DOM树进⾏对⽐，得到DOM结构的区别，然后仅仅将需要变化的部分进⾏实际的浏览器DOM更新。⽽且React能够批处理虚拟DOM的刷新，在⼀个事件循环（Event Loop）内的两次数据变化会被合并，例如你连续的先将节点内容从A-B,B-A，React会认为A变成B，然后⼜从B变成A UI不发⽣任何变化，⽽如果通过⼿动控制，这种逻辑通常是极其复杂的。尽管**每⼀次都需要构造完整的虚拟DOM树**，但是因为虚拟DOM是内存数据，性能是极⾼的。这样，在保证性能的同时，开发者将不
-再需要关注某个数据的变化如何更新到⼀个或多个具体的DOM元素，⽽只需要关⼼在任意⼀个数据状态下，整个界⾯是如何Render的。
+**React 通过制定大胆的策略，将 O(n^3) 复杂度的问题转换成 O(n) 复杂度的问题**。 
 
-**diff策略**
+**diff 策略**
 
-React用 三大策略 将O(n^3)复杂度 转化为 O(n)复杂度
+- **tree diff**：新旧DOM树，逐层对比的方式
+  
+> DOM节点跨层级的移动操作特别少，可以忽略不计。
 
-- 策略一（tree diff）：新旧DOM树，逐层对比的方式
-  DOM节点跨层级的移动操作特别少，可以忽略不计。
+![img](https://images2018.cnblogs.com/blog/1455367/201808/1455367-20180808083547179-1944470540.jpg)
 
-  ![img](https://images2018.cnblogs.com/blog/1455367/201808/1455367-20180808083547179-1944470540.jpg)
+只会对相同颜色方框内的 DOM 节点进行比较，即同一个父节点下的所有子节点。
 
-  https://images2018.cnblogs.com/blog/1455367/201808/1455367-20180808083547179-1944470540.jpg
+当发现节点已经不存在，则该节点及其子节点会被完全删除掉，不会用于进一步的比较。
 
-  只会对相同颜色方框内的 DOM 节点进行比较，即同一个父节点下的所有子节点。
+这样只需要对树进行一次遍历，便能完成整个 DOM 树的比较。
 
-  当发现节点已经不存在，则该节点及其子节点会被完全删除掉，不会用于进一步的比较。
+- **component diff**：
+   React 是基于组件构建应用的，对于组件间的比较所采取的策略也是简洁高效。 
 
-  这样只需要对树进行一次遍历，便能完成整个 DOM 树的比较。
-
-- 策略二（component diff）：
-  拥有相同类的两个组件生成相似的树形结构， 拥有不同类的两个组件 生成不同的树形结构。
-
-- 策略三（element diff）：
+  - 如果是同一类型的组件，按照原策略继续比较 virtual DOM tree。
+  - 如果不是，则将该组件判断为 dirty component，从而替换整个组件下的所有子节点
+  - 对于同一类型的组件，有可能其 Virtual DOM 没有任何变化，如果能够确切的知道这点那可以节省大量的 diff 运算时间，因此 React 允许用户通过 shouldComponentUpdate() 来判断该组件是否需要进行 diff。
+  
+- **element diff**：
+  
+   当节点处于同一层级时，React diff 提供了三种节点操作
+  
+  INSERT_MARKUP:新的组件类型不在旧集合中，即全新的节点，需要对新节点进行插入操作。
+  MOVE_EXISTING:旧集合中有新组件类型，且element是可更新的类型，这时候就需要做移动操作，可以复用以前的DOM节点。
+  REMOVE_NODE:旧组件类型，在新集合里也有，但对应的element不同则不能直接复用和更新，需要执行删除操作，或者旧组件不在新集合里的，也需要执行删除操作。
+  ————————————————
+  
   对于同一层级的一组子节点，通过唯一id区分。
 
-### fiber
+## fiber
+
+**fiber就是链表结构的虚拟Dom**
 
 1. 为什么需要fiber
 
-   对于大型项目，组件树会很大，这个时候递归遍历的成本就会很高，会造成主线程被持续占用，结果就是主线程上的布局，动画等周期性任务无法立即得到处理，造成视觉上的卡顿，影响用户体验。
+   对于大型项目，组件树会很大，这个时候**递归遍历**的成本就会很高，会造成主线程被持续占用，结果就是主线程上的布局，动画等周期性任务无法立即得到处理，造成视觉上的卡顿，影响用户体验。
 
-   **fiber就是链表结构的虚拟Dom**
-
-2. 在react 16之后发布的⼀种react 核⼼算法，React Fiber是对核⼼算法的⼀次重新实现(官⽹说法)。之前⽤的是diff算法。在之前React中，**更新过程是同步的**，这可能会导致性能问题。当React决定要加载或者更新组件树时，会做很多事，⽐如调⽤各个组件的⽣命周期函数，计算和⽐对Virtual DOM，最后更新DOM树，这整个过程是同步进⾏的，也就是说只要⼀个加载或者更新过程开始，中途不会中断。**因为JavaScript单线程的特点，如果组件树很⼤的时候，每个同步任务耗时太⻓，就会出现卡顿。**
+2. 在react 16之后发布的⼀种react 核⼼算法，React Fiber是对核⼼算法的⼀次重新实现(官⽹说法)。之前⽤的是diff算法。在之前React中，**更新过程是同步的**，这可能会导致性能问题。当React决定要加载或者更新组件树时，会做很多事，⽐如调⽤各个组件的⽣命周期函数，计算和⽐对Virtual DOM，最后更新DOM树，这整个过程是同步进⾏的，**也就是说只要⼀个加载或者更新过程开始，中途不会中断。因为JavaScript单线程的特点，如果组件树很⼤的时候，每个同步任务耗时太⻓，就会出现卡顿。**
    React Fiber的⽅法其实很简单——分⽚。把⼀个耗时⻓的任务分成很多⼩⽚，每⼀个⼩⽚的运⾏时间很短，**虽然总时间依然很⻓，但是在每个⼩⽚执⾏完之后，都给其他任务⼀个执⾏的机会，**这样唯⼀的线程就不会被独占，其他任务依然有运⾏的机会。
 
 # React的特点和优势
@@ -117,7 +137,9 @@ npm i
 
 ## 插件
 
-### react 
+### 底层编译类
+
+#### react 
 
  react 这个包，是专门用来创建React组件、组件生命周期等这些东西的；
  react-dom 里面主要封装了和 DOM 操作相关的包，要把组件渲染到页面上
@@ -129,25 +151,14 @@ import ReactDOM from 'react-dom'
 
 要使用 JSX 语法，必须先运行 `cnpm i babel-preset-react -D`，然后再 `.babelrc` 中添加 语法配置；
 
-### **Mobx**
+### 框架功能类
 
-作为了解的内容，在项⽬中使⽤redux的情况更多。
+- pubsub利用JavaScript进行发布/订阅的库
+- React 中保存页面状态/在react中实现vue的**keep-alive**/**React Activation**
 
-Mobx是⼀个功能强⼤，上⼿⾮常容易的状态管理⼯具。redux的作者也曾经向⼤家推荐过它，在不少情况下可以使⽤Mobx来替代掉redux。
+### 样式动画类
 
-### PropType
-
-PropTypes 进行类型检查,可用于确保组件接收到的props数据类型是有效的
-
-```react
-UserDisplay.propTypes = {
-    name: PropTypes.string.isRequired,
-    address: PropTypes.objectOf(PropTypes.string),
-    age: PropTypes.number.isRequired
-}
-```
-
-### CSS-in-JS
+#### CSS-in-JS
 
 CSS-in-JS就是**将应用的CSS样式写在JavaScript文件里面**，而不是独立为一些`.css`，`.scss`或者`less`之类的文件，这样你就可以在CSS中使用一些属于JS的诸如模块声明，变量定义，函数调用和条件判断等语言特性来提供灵活的可扩展的样式定义。
 
@@ -221,7 +232,7 @@ function MyComponent() {
 }
 ```
 
-### 样式动画库
+#### 样式动画库
 
 https://zhuanlan.zhihu.com/p/361065034
 
@@ -231,6 +242,61 @@ https://zhuanlan.zhihu.com/p/361065034
 - http://textillate.js.org/
 - http://react-animations.herokuapp.com/
 - https://www.framer.com/docs/
+
+### 工具类
+
+#### 拖拽react-sortable-hoc
+
+高阶函数（Higher Order Function）=> 参数或返回值为函数组件
+
+`react-sortable-hoc` 提供了两个特别重要的 API ，分别是`SortableContainer 和 SortableElement` 看英文的意思也知道，`SortableElement`用来装饰每个要拖拽的组件，相对于`SortableContainer` 要装饰的组件，`SortableElement` 装饰的组件是子组件。
+
+```jsx
+const SortableItem = SortableElement((props: any) => <div>{props.children}</div>);
+const SortableList1 = SortableContainer(({ items }: any) => {
+    return (
+      <div>
+        {items.map((item: any, index: number) => (
+          <SortableItem key={`item-${item}-${index}`} index={index} value={item} >
+            <RuleOne
+            ></RuleOne>
+          </SortableItem>
+        ))}
+      </div>
+    );
+  });
+  
+<SortableList1 items={submitData['rule1'].ruleGroup} useDragHandle disableAutoscroll
+                onSortEnd={({ oldIndex, newIndex }: any) => {
+                  if (oldIndex !== newIndex) {
+                    saveRules(submitData, () => {
+                      submitData['rule1'].ruleGroup = 				 arrayMoveImmutable(submitData['rule1'].ruleGroup, oldIndex, newIndex)
+                    })
+                  }
+                }}
+/>
+```
+
+`array-move` 就一个 API，它的主要作用就是**用来交换数组中元素的位置**。我们用 node 进行调试 
+
+```jsx
+// 引包
+const arrayMove = require('array-move');
+// 创建一个数组
+const input = ['a', 'b', 'c'];
+ 
+// 以下三个排序实例
+console.log(arrayMove(input, 1, 2));
+//=> ['a', 'c', 'b']
+ 
+console.log(arrayMove(input, -1, 0));
+//=> ['c', 'a', 'b']
+ 
+console.log(arrayMove(input, -2, -3));
+//=> ['b', 'a', 'c']
+```
+
+
 
 ## main.js
 
@@ -284,26 +350,48 @@ export default function Hello(props) {
 
 # 组件的生命周期
 
+https://zh-hans.reactjs.org/docs/react-component.html#static-getderivedstatefromprops
+
  + ##### 组件生命周期分为三部分：
    
-	+ **组件初始化阶段**：组件创建阶段的生命周期函数，有一个显著的特点：创建阶段的生命周期函数，在组件的一辈子中，只执行一次；
-	
+	+ **组件初始化阶段**：组件实例创建阶段的生命周期函数，在组件的一辈子中，**只执行一次**；
+	  
 	  - constructor(props)
+	    
+	    仅用于以下两种情况：
+	    
+	    - 通过给 `this.state` 赋值对象来初始化[内部 state](https://zh-hans.reactjs.org/docs/state-and-lifecycle.html)。
+	    - 为[事件处理函数](https://zh-hans.reactjs.org/docs/handling-events.html)绑定实例
+	    
+	    如果不初始化 state 或不进行方法绑定，则不需要为 React 组件实现构造函数。 **(所以只适用class)**
+	    
 	    React组件的构造函数在挂载之前被调⽤。在实现 React.Component 构造函数时，需要先在添加其他内容前，调⽤ super(props) ，⽤来将⽗组件传来的 props 绑定到这个类中，使⽤ this.props 将会得到。
-	  - componentWillMount: 组件将要被挂载，此时还没有开始渲染虚拟DOM。无法获取到页面上的 任何元素，因为虚拟DOM 和 页面 都还没有开始渲染呢。**通常在这⾥进⾏ajax请求**
-	  - render：第一次开始渲染真正的虚拟DOM，当render执行完，内存中就有了完整的虚拟DOM了，但是，页面上尚未真正显示DOM元素
-	  - componentDidMount: 组件完成了挂载，此时，组件已经显示到了页面上，当这个方法执行完，组件就进入都了 运行中 的状态
+	    
+	  - componentWillMount（**17已经过时）: 组件将要被挂载，此时还没有开始渲染虚拟DOM。无法获取到页面上的 任何元素，因为虚拟DOM 和 页面 都还没有开始渲染呢。**通常在这⾥进⾏ajax请求**
+	  
+	  - render： `render()` 方法是 class 组件中唯一必须实现的方法。 第一次开始渲染真正的虚拟DOM，当render执行完，内存中就有了完整的虚拟DOM了，但是，页面上尚未真正显示DOM元素
+	  
+	  - componentDidMount:  `componentDidMount()` 会在组件挂载后（插入 DOM 树中）立即调用。依赖于 DOM 节点的初始化应该放在这里。**如需通过网络请求获取数据，此处是实例化请求的好地方**。 这个方法是比较适合添加订阅的地方。如果添加了订阅，请不要忘记在 `componentWillUnmount()` 里取消订阅  
 	
-	- **组件更新阶段**：也有一个显著的特点，根据组件的state和props的改变，有选择性的触发0次或多次；
+	- **组件更新阶段**：更新根据组件的state和props的改变，有选择性的触发0次或多次；
 	
-	  - componentWillReceiveProps: 
-	    组件将要接收新属性，此时，只要这个方法被触发，就证明父组件为当前子组件传递了新的属性值；
+	  - componentWillReceiveProps（**17已经过时**）: 
+	    组件将要接收新属性props，此时，只要这个方法被触发，就证明父组件为当前子组件传递了新的属性值；
 	    如果我们使用 this.props 来获取属性值，这个属性值，不是最新的，是上一次的旧属性值
 	    // 如果想要获取最新的属性值，需要通过 componentWillReceiveProps 的参数列表来获取
-	    componentWillReceiveProps(nextProps){    console.log(this.props.pmsg + ' ---- ' + nextProps.pmsg);}
-	  - shouldComponentUpdate: 组件是否需要被更新，此时，组件尚未被更新，但是，state 和 props 肯定是最新的
-	  - componentWillUpdate: 组件将要被更新，此时，尚未开始更新，内存中的虚拟DOM树还是旧的，页面上的 DOM 元素 也是旧的
+	    
+	    ```jsx
+	    componentWillReceiveProps(nextProps){    
+	        console.log(this.props.pmsg + ' ---- ' + nextProps.pmsg
+	    );}
+	    ```
+	    
+	  - shouldComponentUpdate: 组件是否需要被更新，此时，组件尚未被更新，但是，state 和 props 肯定是最新的。 首次渲染或使用 `forceUpdate()` 时不会调用该方法。 
+	
+	  - componentWillUpdate（**17已经过时**）: 组件将要被更新，此时，尚未开始更新，内存中的虚拟DOM树还是旧的，页面上的 DOM 元素 也是旧的
+	
 	  - render: 此时，又要重新根据最新的 state 和 props 重新渲染一棵内存中的 虚拟DOM树，当 render 调用完毕，内存中的旧DOM树，已经被新DOM树替换了！此时页面还是旧的
+	
 	  - componentDidUpdate: 此时，页面又被重新渲染了，state 和 虚拟DOM 和 页面已经完全保持同步
 	
 	- **组件销毁阶段**：也有一个显著的特点，一辈子只执行一次
@@ -318,14 +406,62 @@ export default function Hello(props) {
 
 ## 组件
 
+### 组件渲染机制
+
+`Component`在 `state`改变,`props`改变,调用`this.setState({...})`，的时候都会进行渲染
+
+- 强制React组件重新渲染
+
+  **使用React的`forceUpdate`函数**
+
+  这是一个最明显的方式。在React类组件中，你可以通过调用这个方法，强制重渲染一个组件：
+
+  ```javascript
+  this.forceUpdate();
+  ```
+
+  **在React hooks中强制更新组件**
+
+  在React hooks中，`forceUpdate`函数是无法使用的。你可以使用如下方式强制更新组件，并且不更改组件的state：
+
+  ```javascript
+  const [state, updateState] = React.useState();
+  const forceUpdate = React.useCallback(() => updateState({}), []);
+  ```
+
+- `shouldComponentUpdate`
+
+  ```jsx
+  shouldComponentUpdate(nextProps,nextState) {    
+      if(this.state.name === nextState.name) {        
+          return false    
+      }else {        
+          return true    
+      }
+  }
+  ```
+
+  
+
+- 通过memo来判断指定的参数变化更新组件
+
+- **componentWillReciveProps**
+
 ### 状态组件
 
 #### 状态组件对比
 
-使用 function 构造函数创建的组件，内部没有 state 私有数据，只有一个props来接收外界传递过来的数据；
-使用 class 关键字 创建的组件，内部，除了有 this.props 这个只读属性之外，还有一个 专门用于 存放自己私有数据的 this.state 属性，这个 state 是可读可写的！
-基于上面的区别：我们可以为这两种创建组件的方式，下定义了： 使用 function 创建的组件，叫做【无状态组件】；使用 class 创建的组件，叫做【有状态组件】
-有状态组件和无状态组件，最本质的区别，就是有无 state 属性；同时， class 创建的组件，有自己的生命周期函数，但是，function 创建的 组件，没有自己的生命周期函数；
+使用 function 创建的组件，叫做【无状态组件】；使用 class 创建的组件，叫做【有状态组件】
+
+- 使用 function 构造函数创建的组件，内部没有 state 私有数据，只有一个props来接收外界传递过来的数据
+- 使用 class创建的组件，内部，除了有 this.props 这个只读属性之外，还有一个 专门用于 存放自己私有数据的this.state 属性，这个 state 是可读可写的！
+
+有状态组件和无状态组件，最本质的区别：
+
+- 有无 state 属性；
+
+- class 创建的组件，有自己的生命周期函数，但是，function 创建的 组件，没有自己的生命周期函数；
+
 问题来了：什么时候使用 有状态组件，什么时候使用无状态组件呢？？？
 
   1. 如果一个组件需要存放自己的私有数据，或者需要在组件的不同阶段执行不同的业务逻辑，此时，非常适合用 class 创建出来的有状态组件；
@@ -398,7 +534,7 @@ export default class Hello2 extends React.Component {
 
 #### 函数组件
 
-函数或无状态组件是一个纯函数，它可接受接受参数，并返回react元素。这些都是没有任何副作用的纯函数。这些组件没有状态或生命周期方法
+函数/无状态组件是一个纯函数，它可接受接受参数，并返回react元素。这些都是没有任何副作用的纯函数。这些组件没有状态或生命周期方法
 
 ```js
 // 组件的首字母必须是大写
@@ -411,29 +547,47 @@ function Hello(props) {
 }
 ```
 
-### PureComponent
+### 内置组件
+
+#### PureComponent
 
 https://blog.csdn.net/deng1456694385/article/details/88746797
 
-`Component`在 `state`改变,`props`改变,调用`this.setState({...})`的时候都会进行渲染
-
-    class demo extent Component {
-        state = {
-            name: ''
-        }
-    componentDidMount() {
-    	this.setState({name: ''})
+```jsx
+class demo extent Component {
+    state = {
+        name: ''
     }
-    
+    componentDidMount() {
+        this.setState({name: ''})
+    }
     render() {
-    	console.log('render')
+        console.log('render')
         return <div>haha</div>
     }
-    }
+}
+```
 
 上面的组件会在`this.setState`调用后就会重新传染一次,但是我们可以看出`name`状态并没有没被我们用到,也没有改变,这种渲染就是无效渲染,所以为了优化我们通常会使用钩子函数`shouldComponentUpdate`来做一些逻辑判断,来确定是否要重新`render`一次
 
-    class demo extent Component {    state = {        name: ''    }componentDidMount() {	this.setState({name: ''})}shouldComponentUpdate(nextProps,nextState) {    if(this.state.name === nextState.name) {        return false    }else {        return true    }}render() {	console.log('render')    return <div>haha</div>}
+```jsx
+class demo extent Component {    
+    state = {        
+        name: ''    
+    }
+    componentDidMount() {	
+        this.setState({name: ''})
+    }
+    shouldComponentUpdate(nextProps,nextState) {    
+        if(this.state.name === nextState.name) {        
+            return false    
+        }else {        
+            return true    
+        }
+    }
+	render <div>haha</div>
+}
+```
 
 这样就可以避免无效渲染,优化性能,但是如果这种判断逻辑多到一定程度,光判断逻辑就很复杂,而且每次都要判断也会影响性能,所以才有了 `PureComponent`
 
@@ -442,83 +596,77 @@ https://blog.csdn.net/deng1456694385/article/details/88746797
 **Component vs PureComponent 总结**
 PureComponent相较于Component区别就是,对props和state默认进行判断来确定是否渲染,从而减少无效渲染次数. 大部分情况下直接用PureComponent比较好可以提高性能,但是如果遇到需要频繁修改值重新渲染的组件,用Component比较好,因为PureComponent频繁的判断也会影响性能.
 
-### memo
+#### memo
 
-其实这个和PureComponent功能是一样的，只不过memo是提供给函数组件使用的，而PureComponent是提供给class组件使用的，还有一点就是memo提供一个参数可以让我们自行配置可以对引用数据做比较然后触发render
+针对函数组件的,减少组件的不必要更新。 `React.memo` 仅检查 props 变更。如果函数组件被 `React.memo` 包裹，且其实现中拥有 [`useState`](https://zh-hans.reactjs.org/docs/hooks-state.html)，[`useReducer`](https://zh-hans.reactjs.org/docs/hooks-reference.html#usereducer) 或 [`useContext`](https://zh-hans.reactjs.org/docs/hooks-reference.html#usecontext) 的 Hook，当 state 或 context 发生变化时，它仍会重新渲染。 
 
-### Fragment
+```js
+const TextCell = memo(function(props:any) {
+  console.log('我重新渲染了')
+  return (
+    <p onClick={props.click}>ffff</p>
+  )
+})
+
+//父组件
+const fatherComponent = () => {
+const [number,setNumber] = useState(0);
+ return(
+    <div>
+      模块{number}
+      <TextCell/>
+      <Button onClick={()=>setNumber(number => number + 1)}>加加加</Button>
+    </div>
+  )
+}
+```
+
+在这里如果没有用到memo 每次父组件重新setNumber,**子组件都会重新渲染一次**,加上了后**只会在初始化的时候渲染(useMemo会在页面初始化的时候执行一次,并把执行的结果缓存一份)**,减少了子组件渲染的次数
+
+默认情况下其只会对复杂对象做**浅层对比**，如果你想要控制对比过程，那么请将自定义的比较函数通过第二个参数传入来实现。 
+
+```jsx
+function MyComponent(props) {
+  /* 使用 props 渲染 */
+}
+function areEqual(prevProps, nextProps) {
+  /*
+  如果把 nextProps 传入 render 方法的返回结果与
+  将 prevProps 传入 render 方法的返回结果一致则返回 true，
+  否则返回 false
+  */
+}
+export default React.memo(MyComponent, areEqual);
+```
+
+#### Fragment
 
 无论是函数组件还是类组件，return 的 React 元素的语法必须是由一个标签包裹起来的所有虚拟 DOM 内容
 
 一种是使用一个 div 标签将其包裹起来，另外一种方式就是使用 React 提供的 `<React.Fragment>` 将其包裹起来。但是我们不期望，增加额外的`dom`节点，所以`react`提供`Fragment`碎片概念，能够让一个组件返回多个元素。
 
-- React 事件的命名采用小驼峰式（camelCase），而不是纯小写。
+```
+render() {
+  return (
+    <React.Fragment>
+      Some text.
+      <h2>A heading</h2>
+    </React.Fragment>
+  );
+}
+```
 
-- 使用 JSX 语法时你需要传入一个函数作为事件处理函数，而不是一个字符串。
+### 组件通信
 
-  ```js
-  传统的 HTML：
-  <button onclick="activateLasers()">
-    Activate Lasers
-  </button>
-  React 中略微不同：
-  <button onClick={activateLasers}>
-    Activate Lasers
-  </button>
-  ```
-
-- React 中另一个不同点是你不能通过返回 `false` 的方式阻止默认行为。你必须显式的使用 `preventDefault`
-
-  你必须谨慎对待 JSX 回调函数中的 `this`，在 JavaScript 中，class 的方法默认不会[绑定](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_objects/Function/bind) `this`。如果你忘记绑定 `this.handleClick` 并把它传入了 `onClick`，当你调用这个函数的时候 `this` 的值为 `undefined`。
-
-  这并不是 React 特有的行为；这其实与 [JavaScript 函数工作原理](https://www.smashingmagazine.com/2014/01/understanding-javascript-function-prototype-bind/)有关。通常情况下，如果你没有在方法后面添加 `()`，例如 `onClick={this.handleClick}`，你应该为这个方法绑定 `this`。
-
-  ```js
-   1.bind
-   constructor(props) {
-      super(props);
-      this.state = {isToggleOn: true};
-      // 为了在回调中使用 `this`，这个绑定是必不可少的   
-      this.handleClick = this.handleClick.bind(this);  
-      }
-  2.箭头函数
-    handleClick = () => {
-      console.log('this is:', this);
-    }
-  ```
-
-- 在 JSX 中嵌入表达式
-
-  ```js
-    return (
-      <div>
-        <h1>Hello!</h1>
-        {unreadMessages.length > 0 &&
-          <h2>
-            You have {unreadMessages.length} unread messages.
-          </h2>
-        }
-      </div>
-    );
-  ```
-
-- 阻止组件渲染
-
-  ```
-   return null;
-  ```
-
-## 组件通信
-
-### props
+#### props
 
 适用于父子组件通信
 
-#### 父组件->子组件
+##### 父组件->子组件
 
 父组件将需要传递的参数通过`key={xxx}`方式传递至子组件，子组件通过`this.props.key`获取参数.
 
-#### 子组件->父组件
+##### 子组件->父组件
 
 利用 props callback 通信，父组件传递一个 callback 到子组件，当事件触发时将参数放置到 callback 带回给父组件.
 
@@ -575,27 +723,29 @@ class Son extends React.Component<IProps> {
 export default Son
 ```
 
-### Context
+#### Context
 
-#### 在类组件中传递
+https://zh-hans.reactjs.org/docs/context.html
 
-适用于跨层级组件之间通信
+数据是通过 props 属性自上而下（由父及子）进行传递的 ，需要显式地通过组件树的逐层传递 props。Context 设计目的是为了共享那些对于一个组件树而言是“全局”的数据 
 
 ```jsx
 // context.js
 import React from 'react'
-const { Consumer, Provider } = React.createContext(null) //创建 context 并暴露Consumer和Provide
+//创建一个 Context 对象，并暴露Consumer和Provide
+const { Consumer, Provider } = React.createContext(null) 
 export { Consumer, Provider }
 //Father
 import { Provider } from './context'
 import React from 'react'
 import Son from './son'
 <Provider value={this.state.info}>
-        <div>
-          <p>{this.state.info}</p>
-          <Son />
-        </div>
+    <div>
+        <p>{this.state.info}</p>
+        <Son />
+    </div>
 </Provider>
+    
 //Son
 import React from 'react'
 import GrandSon from './grandson'
@@ -611,9 +761,7 @@ import { Consumer } from './context'
 </Consumer>
 ```
 
-#### 在函数组件中传递
-
-使用useContext
+当 Provider 的 `value` 值发生变化时，它内部的所有消费组件都会重新渲染。从 Provider 到其内部 consumer 组件（包括 [.contextType](https://zh-hans.reactjs.org/docs/context.html#classcontexttype) 和 [useContext](https://zh-hans.reactjs.org/docs/hooks-reference.html#usecontext)）的传播不受制于  `shouldComponentUpdate` 函数，因此当 consumer 组件在其祖先组件跳过更新的情况下也能更新。 
 
 ## DOM
 
@@ -643,6 +791,75 @@ export default App;
 ```
 
 ### **Refs**
+
+#### 回调 Refs
+
+> 支持在函数组件和类组件内部使用
+
+`React` 支持 `回调 refs` 的方式设置 Refs。这种方式可以帮助我们更精细的控制何时 Refs 被设置和解除。
+
+使用 `回调 refs` 需要将回调函数传递给 `React元素` 的 `ref` 属性。这个函数接受 React 组件实例 或 HTML DOM 元素作为参数，将其挂载到实例属性上，如下所示：
+
+```jsx
+import React from 'react';
+export default class MyInput extends React.Component {
+    constructor(props) {
+        super(props);
+        this.inputRef = null;
+        this.setTextInputRef = (ele) => {
+            this.inputRef = ele;
+        }
+        this.setSonRef = (ele) => {
+            this.sonInfo = ele;
+        }
+    }
+
+    componentDidMount() {
+        this.inputRef && this.inputRef.focus();//获取input DOM
+        this.sonInfo.getSonInfo()//父组件执行子组件函数
+    }
+    render() {
+        return (
+            <input type="text" ref={this.setTextInputRef}/>
+            <MyInput ref={this.setSonRef}/>
+        )
+    }
+}
+//
+function MyInput(props) {
+  state = {
+      info: {}
+  }
+  getSonInfo(){
+      console.log(this,state.info)
+  }
+  return <input type="text" ref={props.inputRef} />;
+}
+```
+
+React 会在组件挂载时，调用 `ref` 回调函数并传入 DOM元素(或React实例)，当卸载时调用它并传入 `null`。在 `componentDidMount` 或 `componentDidUpdate` 触发前，React 会保证 Refs 一定是最新的。
+
+> 可以在组件间传递回调形式的 refs.
+
+```js
+import React from "react";
+export default function Form() {
+  let ref = null;
+  React.useEffect(() => {
+    //ref 即是 MyInput 中的 input 节点
+    ref.focus();
+  }, [ref]);
+  return (
+    <>
+      <MyInput inputRef={(ele) => (ref = ele)} />
+      {/** other code */}
+    </>
+  );
+}
+function MyInput(props) {
+  return <input type="text" ref={props.inputRef} />;
+}
+```
 
 #### createRef
 
@@ -697,7 +914,7 @@ export default class MyInput extends React.Component {
 >
 > **createRef 每次渲染都会返回一个新的引用，而 useRef 每次都会返回相同的引用。**`useRef` 返回的 ref 对象在组件的**整个生命周期内保持不变**。useRef 不仅仅是用来管理 DOM ref 的，它还相当于 this , 可以存放任何变量。useRef 可以很好的解决闭包带来的不方便性
 
-```
+```jsx
 import React, { useRef } from "react";
 export default function UseRefHookExample() {
   let inputRef = useRef(null);
@@ -717,92 +934,87 @@ export default function UseRefHookExample() {
 }
 ```
 
-#### 回调 Refs
+##### useImperativeHandle
 
-> 支持在函数组件和类组件内部使用
+```javascript
+useImperativeHandle(ref, createHandle, [deps])
+```
 
-`React` 支持 `回调 refs` 的方式设置 Refs。这种方式可以帮助我们更精细的控制何时 Refs 被设置和解除。
-
-使用 `回调 refs` 需要将回调函数传递给 `React元素` 的 `ref` 属性。这个函数接受 React 组件实例 或 HTML DOM 元素作为参数，将其挂载到实例属性上，如下所示：
+- 通过useImperativeHandle可以**只暴露特定的操作**
+  - 通过useImperativeHandle的Hook, 将父组件传入的ref和useImperativeHandle第二个参数返回的对象绑定到了一起
+  - 所以在父组件中, 调用inputRef.current时, 实际上是返**回的对象**
+- useImperativeHandle使用简单总结:
+  - 作用: 减少暴露给父组件获取的DOM元素属性, 只暴露给父组件需要用到的DOM方法
+  - 参数1: 父组件传递的ref属性
+  - 参数2: 返回一个对象, 以供给父组件中通过ref.current调用该对象中的方法
 
 ```jsx
-import React from 'react';
-export default class MyInput extends React.Component {
-    constructor(props) {
-        super(props);
-        this.inputRef = null;
-        this.setTextInputRef = (ele) => {
-            this.inputRef = ele;
-        }
-    }
+import React, { useRef, forwardRef, useImperativeHandle } from 'react'
 
-    componentDidMount() {
-        this.inputRef && this.inputRef.focus();
-    }
-    render() {
-        return (
-            <input type="text" ref={this.setTextInputRef}/>
-        )
-    }
-}
+const JMInput = forwardRef((props, ref) => {
+  const inputRef = useRef()
+  // 作用: 减少父组件获取的DOM元素属性,只暴露给父组件需要用到的DOM方法
+  // 参数1: 父组件传递的ref属性
+  // 参数2: 返回一个对象,父组件通过ref.current调用对象中方法
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current.focus()
+    },
+  }))
+  return <input type="text" ref={inputRef} />
+})
 
-```
+export default function ImperativeHandleDemo() {
+  // useImperativeHandle 主要作用:用于减少父组件中通过forward+useRef获取子组件DOM元素暴露的属性过多
+  // 为什么使用: 因为使用forward+useRef获取子函数式组件DOM时,获取到的dom属性暴露的太多了
+  // 解决: 使用uesImperativeHandle解决,在子函数式组件中定义父组件需要进行DOM操作,减少获取DOM暴露的属性过多
+  const inputRef = useRef()
 
-React 会在组件挂载时，调用 `ref` 回调函数并传入 DOM元素(或React实例)，当卸载时调用它并传入 `null`。在 `componentDidMount` 或 `componentDidUpdate` 触发前，React 会保证 Refs 一定是最新的。
-
-> 可以在组件间传递回调形式的 refs.
-
-```js
-import React from "react";
-export default function Form() {
-  let ref = null;
-  React.useEffect(() => {
-    //ref 即是 MyInput 中的 input 节点
-    ref.focus();
-  }, [ref]);
   return (
-    <>
-      <MyInput inputRef={(ele) => (ref = ele)} />
-      {/** other code */}
-    </>
-  );
-}
-function MyInput(props) {
-  return <input type="text" ref={props.inputRef} />;
+    <div>
+      <button onClick={() => inputRef.current.focus()}>聚焦</button>
+      <JMInput ref={inputRef} />
+    </div>
+  )
 }
 ```
 
-#### Ref 转发/传递
 
-Ref 转发是一项将 ref 自动地通过组件传递到其一子组件的技巧，其允许某些组件接收 ref，并将其向下传递给子组件。
 
-转发 ref 到DOM中:
+#### forwardRef 转发/传递
 
-```js
-import React from 'react';
+ `React.forwardRef` 会创建一个React组件，这个组件能够将其接受的 [ref](https://zh-hans.reactjs.org/docs/refs-and-the-dom.html) 属性转发到其组件树下的另一个组件中。 
 
-const MyInput = React.forwardRef((props, ref) => {
-    return (
-        <input type="text" ref={ref} {...props} />
-    )
-});
-function Form() {
-    const inputRef = React.useRef(null);
-    React.useEffect(() => {
-        console.log(inputRef.current);//input节点
-    })
-    return (
-        <MyInput ref={inputRef} />
-    )
-}
-复制代码
-```
+以下两种场景中特别有用：
 
-1. 调用 `React.useRef` 创建了一个 `React ref` 并将其赋值给 `ref` 变量。
-2. 指定 `ref` 为JSX属性，并向下传递 `<MyInput ref={inputRef}>`
-3. React 传递 `ref` 给 `forwardRef` 内函数 `(props, ref) => ...` 作为其第二个参数。
-4. 向下转发该 `ref` 参数到 `<button ref={ref}>`，将其指定为JSX属性
-5. 当 `ref` 挂载完成，`inputRef.current` 指向 `input` DOM节点
+- [转发 refs 到 DOM 组件](https://zh-hans.reactjs.org/docs/forwarding-refs.html#forwarding-refs-to-dom-components)
+
+  ```js
+  import React from 'react';
+  
+  const MyInput = React.forwardRef((props, ref) => {
+      return (
+          <input type="text" ref={ref} {...props} />
+  	)
+  });
+  function Form() {
+      const inputRef = React.useRef(null);//class组件用createRef
+      React.useEffect(() => {
+          console.log(inputRef.current);//input节点
+      })
+      return (
+          <MyInput ref={inputRef} />
+      )
+  }
+  ```
+
+  1. 调用 `React.useRef` 创建了一个 `React ref` 并将其赋值给 `ref` 变量。
+  2. 指定 `ref` 为JSX属性，并向下传递 `<MyInput ref={inputRef}>`
+  3. React 传递 `ref` 给 `forwardRef` 内函数 `(props, ref) => ...` 作为其第二个参数。
+  4. 向下转发该 `ref` 参数到 `<button ref={ref}>`，将其指定为JSX属性
+  5. 当 `ref` 挂载完成，`inputRef.current` 指向 `input` DOM节点
+
+- [在高阶组件中转发 refs](https://zh-hans.reactjs.org/docs/forwarding-refs.html#forwarding-refs-in-higher-order-components)
 
 ### findDOMNode()
 
@@ -909,9 +1121,47 @@ const listItems = numbers.map((number) =>
  <p style={{color:'red', fontSize:'14px'}}>Hello world</p>
 ```
 
-**第二种：className（外部引用）**
+**动态添加样式**
 
-class需要写成className（因为毕竟是在写类js代码，会收到js规则的限制，而class是关键字）
+```
+<div style={{display: (index===this.state.currentIndex) ? "block" : "none"}}>此标签是否隐藏</div>
+```
+
+```
+<div className={index===this.state.currentIndex?"active":null}>此标签是否选中</div>
+```
+
+**第二种：内嵌样式**
+
+```
+<style>{`.operafor4{margin-top:42px !important}`}</style>
+```
+
+**第二种：css modules**
+
+https://www.ruanyifeng.com/blog/2016/06/css_modules.html
+
+CSS的规则都是全局的，任何一个组件的样式规则，都对整个页面有效。例如：父组件和子组件使用相同的class，父组件的class会覆盖子组件的样式
+
+产生局部作用域的唯一方法，就是使用一个独一无二的`class`的名字，不会与其他选择器重名。这就是 CSS Modules 的做法。
+
+css Modules 添加多个className
+
+```css
+<div className={`${styles.sAll} ${styles.s1}`}>aaaaaa</div>
+```
+
+CSS Modules 允许使用`:global(.className)`的语法，声明一个全局规则。
+
+```css
+.title {
+  color: red;
+}
+
+:global(.title) {
+  color: green;
+}
+```
 
 **第三种：样式组件（styled-components）**
 
@@ -925,22 +1175,6 @@ const Container = styled.div`
     background: pink;
     color: white;
 `
-```
-
-**第四种：内嵌样式**
-
-```
-<style>{`.operafor4{margin-top:42px !important}`}</style>
-```
-
-#### 动态添加样式
-
-```
-<div style={{display: (index===this.state.currentIndex) ? "block" : "none"}}>此标签是否隐藏</div>
-```
-
-```
-<div className={index===this.state.currentIndex?"active":null}>此标签是否选中</div>
 ```
 
 ## 表单和受控组件
@@ -1020,25 +1254,29 @@ ReactDOM.render(
 
 ### PropTypes类型检查
 
-```js
-import PropTypes from 'prop-types';
+PropTypes 进行类型检查,可用于确保组件接收到的props数据类型是有效的
 
-class Greeting extends React.Component {
-  render() {
-    return (
-      <h1>Hello, {this.props.name}</h1>
-    );
-  }
-}
-Greeting.propTypes = {
-  name: PropTypes.string
-};
+导入包
+
+```jsx
+import PropTypes from 'prop-types';
 ```
 
-```js
-import PropTypes from 'prop-types';
-MyComponent.propTypes = {
-  // 你可以将属性声明为 JS 原生类型，默认情况下
+编写组件
+
+```jsx
+class Greeting extends React.Component {
+    render() {
+        return <h1>Hello, {this.props.name}</h1>
+    }
+}
+```
+
+新增类型检查
+
+```cpp
+Greeting.propTypes = {
+// 你可以将属性声明为 JS 原生类型，默认情况下
   // 这些属性都是可选的。
   optionalArray: PropTypes.array,
   optionalBool: PropTypes.bool,
@@ -1122,8 +1360,7 @@ MyComponent.propTypes = {
       );
     }
   })
-};
-
+}
 ```
 
 ### **this.props.children** 
@@ -1152,7 +1389,7 @@ componentDidMount(){
 
 ![img](https://p1-jj.byteimg.com/tos-cn-i-t2oaga2asx/gold-user-assets/2020/7/11/1733ca3cdf9d950d~tplv-t2oaga2asx-watermark.awebp)
 
-看完这个例子，也许很多小伙伴会下意识的以为setState是一个异步方法，但是其实**setState并没有异步的说法，之所以会有一种异步方法的表现形式，归根结底还是因为react框架本身的性能机制所导致的**。因为每次调用setState都会触发更新，异步操作是为了提高性能，将多个状态合并一起更新，减少re-render调用。
+看完这个例子，也许很多小伙伴会下意识的以为setState是一个异步方法，但是其实**setState并没有异步的说法，之所以会有一种异步方法的表现形式，归根结底还是因为react框架本身的性能机制所导致的**。因为每次调用setState都会触发更新，异步操作是为了提高性能，将多个状态更新合并一起进行**批量更新**，减少re-render调用。 **将 `setState()` 视为*请求*而不是立即更新组件的命令。** 
 
 ```
 for ( let i = 0; i < 100; i++ ) {
@@ -1186,11 +1423,9 @@ componentDidMount(){
 
 - setState本身并不是异步（不会立即更新state的结果），只是因为react的性能优化机制体现为异步。在react的生命周期函数或者作用域下为异步，在原生的环境下为同步。
 
-- 由于 react 的事件委托机制，调用 onClick 执行的事件，是处于 react 的控制范围的。
+- React18之前，react 无法对 setTimeout 的代码前后加上事务逻辑（除非 react 重写 setTimeout）。
 
-  而 setTimeout 已经超出了 react 的控制范围，react 无法对 setTimeout 的代码前后加上事务逻辑（除非 react 重写 setTimeout）。
-
-  所以当遇到 `setTimeout/setInterval/Promise.then(fn)/fetch 回调/xhr 网络回调`时，react 都是无法控制的。
+  所以当遇到 `setTimeout/setInterval/Promise.then(fn)/fetch 回调/xhr 网络回调`时，react 都是无法控制的**（可以使用手动批处理）**。
 
   - 在setTimeout，Promise.then等异步事件中。setState和useState是同步执行的（立即更新state的结果）
 
@@ -1328,58 +1563,120 @@ http://www.ruanyifeng.com/blog/2019/09/react-hooks.html
 
 **React Hooks 的意思是，组件尽量写成纯函数，如果需要外部功能和副作用，就用钩子把外部代码"钩"进来。**而React Hooks 就是我们所说的“钩子”。
 
-## userState():状态钩子
+## useState():状态钩子
 
 用于为函数组件引入状态（state）。纯函数不能有状态，所以把状态放在钩子里面。
 
-```js
-import React, { useState } from "react";
-
-export default function Button() {
-  const [buttonText, setButtonText] = useState("Click me, 		     please");
-  let a = "1";
-  function handleClick() {
-    a = "2";
-    return setButtonText("Thanks, been clicked!");
-  }
-
-  return (
-    <div>
-      <button onClick={handleClick}>{buttonText}</button>
-      <button onClick={handleClick}>{a}</button>
-    </div>
-  );
-}
-//点击了第一个button后，文字改变。而第二个则不会改变（不会重新渲染数据）
-
-```
-
-**惰性初始化 state：**
-
-initialState 参数只会在组件的初始化渲染中起作用，后续渲染时会被忽略。如果初始 state 需要通过复杂计算获得，则可以传入一个函数，在函数中计算并返回初始的 state，此函数只在初始渲染时被调用
+### 原理
 
 ```jsx
-function Counter5(props) {
-  console.log("Counter5 render");
-  // 这个函数只在初始渲染时执行一次，后续更新状态重新渲染组件时，该函数就不会再被调用
-  function getInitState() {
-    return { number: props.number };
-  }
-  let [counter, setCounter] = useState(getInitState);
-  return (
-    <>
-      <p>{counter.number}</p>
-      <button onClick={() => setCounter({ number: counter.number + 1 })}>
-        +
-      </button>
-      <button onClick={() => setCounter(counter)}>setCounter</button>
-    </>
-  );
+//useState模拟1.0
+//因为每次调用myUseState时会重置state的值。经过改进，必须将state写在函数的外面。
+let _state;
+function myUseState(initialValue) {
+  _state = _state===undefined? initialValue:_state;
+  const setState = (newValue) => {
+    _state = newValue; //更新state值，
+    render(); //触发重新渲染
+  };
+  return [_state, setState];
 }
+/* 粗糙的渲染 */
+const render = () => {
+  ReactDOM.render(<App />, document.getElementById("root"));
+};
+// 使用myUseState
+const App = () => {
+  const [n, setN] = myUseState(0);
+  return (
+	  <div classNam="App">
+		 <p>n:{n}</p>
+		 <button onClick={()=>{setN(n+1)}}>n+1</button> 
+	  </div>
+	  );
+};
+ReactDOM.render(<App />, document.getElementById("root"));
 
 ```
 
+```jsx
+//一个组件用了两个useState怎么办？useState模拟2.0
+let _state=[];
+let index=0;
+function myUseState(initialValue) {
+  int currentIndex=index;	//引入中间变量currentIndex就是为了保存当前操作的下标index。
+  _state[currentIndex] = _state[currentIndex]===undefined? initialValue:_state[currentIndex];
+  const setState = (newValue) => {
+    _state[currentIndex] = newValue; 
+    render(); 
+  };
+  index+=1;// 每次更新完state值后，index值+1
+  return [_state[currentIndex], setState];
+}
+const render = () => {
+  index=0;	//重要的一步，必须在渲染前后将index值重置为0，不然index会一种增加1
+  ReactDOM.render(<App />, document.getElementById("root"));
+};
+// 使用myUseState
+const App = () => {
+  const [n, setN] = myUseState(0);
+  const [m, setM] = myUseState(0);
+  return (
+	  <div classNam="App">
+		 <p>n:{n}</p>
+		 <button onClick={()=>{setN(n+1)}}>n+1</button> 
+		 <p>m:{m}</p>
+		 <button onClick={()=>{setM(m+1)}}>n+1</button> 
+	  </div>
+	  );
+};
+ReactDOM.render(<App />, document.getElementById("root"));
+```
 
+- 在正常的react的事件流里（如onClick等）
+
+  - setState和useState是**异步执行**的（不会立即更新state的结果，所以console数据没有更新）
+    - setState的“异步”并不是说内部由异步代码实现，其实本身执行的过程和代码都是同步的，只是合成事件和钩子函数的调用顺序在更新之前，导致在合成事件和钩子函数中没法立马拿到更新后的值，形式了所谓的“异步”
+
+  - 多次执行setState和useState，只会调用一次重新渲染render
+
+  - 不同的是，setState会进行state的合并，而useState会进行state的覆盖
+
+- 在setTimeout，Promise.then等异步事件中
+
+  - setState和useState是**同步执行**的（立即更新state的结果，**react17之后还是会批处理**）
+
+  - 多次执行setState和useState，每一次的执行setState和useState，都会调用一次render
+
+### **批处理**
+
+batch批量处理：在每次执行 useState 的时候，组件都要重新 render 一次，会造成无效渲染，浪费时间（因为最后一次渲染会覆盖掉前面所有的渲染效果）。 所以 react 会把一些可以一起更新的 useState/setState 放在一起，只渲染一次。
+
+在React16版本及以前，React 会对所有React内部触发的事件监听函数中的更新（比如onClick函数）做批处理，如果是绕过react组件，如addEventListenr，或者异步调用如异步请求或者setTimeout等，不会进行批处理。在React17版本及之后，React会对所有的更新做批处理。
+
+**unstable_batchedUpdates手动批处理**
+
+```jsx
+  function handleClick3() {
+    // 手动批处理
+    setTimeout(() => {
+      unstable_batchedUpdates(() => {
+        setCount1(count1 + 1);
+        console.log(count1);
+        setFlag((f) => !f);
+      });
+    }, 10);
+    // React 只会在最后重新渲染一次（这是批处理！）
+  }
+```
+
+### Tip
+
+- react中useState更新了组件，但是页面上的组件没有刷新
+
+  原因：useState更新的数据，是一个多层次的数据，[react](https://so.csdn.net/so/search?q=react)监听的时候，是浅层监听(默认开启 类 Object.is 的浅层比较，所以指向的地址不变)，所以不一定及时刷新页面
+
+  解决办法:深拷贝，把需要更新的数据深拷贝一份，再使用useState 存储，就能实现每次都及时更新页面
 
 ## useContext():共享状态钩子
 
@@ -1422,19 +1719,54 @@ Navbar 组件的代码如下。
 > }
 > ```
 
-## useReducer():action 钩子
+## useReducer()钩子
 
-React 本身不提供状态管理功能，通常需要使用外部库。这方面最常用的库是 Redux。
+**useReducer适用于引用类型，而useState适合值类型**
 
-Redux 的核心概念是，组件发出 action 与状态管理器通信。状态管理器收到 action 以后，使用 Reducer 函数算出新的状态，Reducer 函数的形式是`(state, action) => newState`。
+```
+const [state, dispatch] = useReducer(reducer, initialArg, init)
+```
 
-`useReducers()`钩子用来引入 Reducer 功能。
+- useReducer 接收三个参数，**第一个参数为一个 reducer 函数，第二个参数是reducer的初始值，第三个参数为可选参数，值为一个函数，可以用来惰性提供初始状态。**
 
-> ```javascript
-> const [state, dispatch] = useReducer(reducer, initialState);
-> ```
+  reducer 接受两个参数一个是 state 另一个是 action ，用法原理和 redux 中的 reducer 一致
 
-上面是`useReducer()`的基本用法，它接受 Reducer 函数和状态的初始值作为参数，返回一个数组。数组的第一个成员是状态的当前值，第二个成员是发送 action 的`dispatch`函数。
+- useReducer 返回一个数组，数组中包含一个 state 和 dispath，state 是返回状态中的值，而 dispatch 是一个可以发布事件来更新 state 的函数。
+
+### **原理**
+
+**useReucer 也是 useState 的内部实现**
+
+```jsx
+let memoizedState
+function useReducer(reducer, initialArg, init) {
+    let initState = void 0
+    if (typeof init === 'function') {
+        initState = init(initialArg)
+    } else {
+        initState = initialArg
+    }
+    function dispatch(action) {
+        memoizedState = reducer(memoizedState, action)
+        // React的渲染
+        // render()
+    }
+    memoizedState = memoizedState || initState
+    return [memoizedState, dispatch]
+}
+
+function useState(initState) {
+    return useReducer((oldState, newState) => {
+        if (typeof newState === 'function') {
+            return newState(oldState)
+        }
+        return newState
+    }, initState)
+}
+
+```
+
+### 实例
 
 ```js
 const initialState = {count: 0};
@@ -1476,7 +1808,7 @@ function Counter() {
 > ```javascript
 > useEffect(()  =>  {
 >     // Async Action
->     //return 则是在页面被卸载时调用.
+>     //return 则是在页面被卸载时调用.返回一个函数来指定如何“清除”副作用
 >     return fn;
 > }, [dependencies])
 > ```
@@ -1595,36 +1927,17 @@ https://www.xiaye0.com/?p=113
 
 https://www.jianshu.com/p/014ee0ebe959
 
-都会在组件第一次渲染的时候执行，之后会在其依赖的变量发生改变时再次执行；并且这两个hooks都返回缓存的值，useMemo返回缓存的变量，useCallback返回缓存的函数。
-
-**React 中当组件的 props 或 state 变化时，会重新渲染视图**
-
-### memo
-
-这个hook是针对组件的,减少组件的不必要更新.
+**useCallback和useMemo**都会在组件**第一次**渲染的时候执行，之后会在其**依赖的变量**发生改变时再次执行；并且这两个hooks都返回**缓存**，**useMemo返回缓存的变量(用来记住变量)，useCallback返回缓存的函数(用来记住函数)。**
 
 ```js
-const TextCell = memo(function(props:any) {
-  console.log('我重新渲染了')
-  return (
-    <p onClick={props.click}>ffff</p>
-  )
-})
+type DependencyList = ReadonlyArray<any>;
 
-父组件
-const fatherComponent = () => {
-const [number,setNumber] = useState(0);
- return(
-    <div>
-      模块{number}
-      <TextCell/>
-      <Button onClick={()=>setNumber(number => number + 1)}>加加加</Button>
-    </div>
-  )
-}
+function useCallback<T extends (...args: any[]) => any>(callback: T, deps: DependencyList): T;
+
+function useMemo<T>(factory: () => T, deps: DependencyList | undefined): T;
 ```
 
-在这里如果没有用到memo 每次父组件重新setNumber,**子组件都会重新渲染一次**,加上了后**只会在初始化的时候渲染(useMemo会在页面初始化的时候执行一次,并把执行的结果缓存一份)**,减少了子组件渲染的次数,这个在之前老的class方法,要减少子组件的渲染,可以使用pureComponent,或者在生命周期 componentWillReciveProps方法里返回false即可.
+> **React 中当组件的 props 或 state 变化时，会重新渲染视图**
 
 ### useCallback
 
@@ -1638,7 +1951,7 @@ const TextCell = memo(function(props:any) {
   )
 })
 
-父组件
+//父组件
 const fatherComponent = () => {
 const [number,setNumber] = useState(0);
 
@@ -1656,7 +1969,7 @@ const handleClick = useCallback(()=>{
 }
 ```
 
-这里如果不使用useCallback,哪怕子组件用memo包裹了 也还是会更新子组件,因为子组件的绑定的函数click在父组件更新的时候也会更新**引用地址**,导致子组件的更新,但是这个其实是没必要的更新,绑定的函数并不需要子组件更新,useCallback就是阻止这类没必要的更新而存在的. 如果是用class的方法的话,需要在constructor里绑定函数,会比较麻烦,不易阅读.
+这里如果不使用useCallback,哪怕子组件用memo包裹了 也还是会更新子组件,因为子组件的绑定的函数click在父组件更新的时候也会更新**引用地址**,导致子组件的更新,但是这个其实是没必要的更新,绑定的函数并不需要子组件更新,useCallback就是阻止这类没必要的更新而存在的
 
 这里需要注意的是 如果是有参数需要传递,则需要这样写
 
@@ -1664,80 +1977,65 @@ const handleClick = useCallback(()=>{
 <TextCell click={useCallback(()=>handleClick(‘传递的参数’),[])}/>
 ```
 
+**作用**
+
+- 防止死循环
+
+  ```jsx
+  // 用于记录 getData 调用次数
+  let count = 0;
+  
+  function App() {
+    const [val, setVal] = useState("");
+  
+    function getData() {
+      setTimeout(() => {
+        setVal("new data " + count);
+        count++;
+      }, 500);
+    }
+    return <Child val={val} getData={getData} />;
+  }
+  
+  function Child({val, getData}) {
+    useEffect(() => {
+      getData();
+    }, [getData]);
+  
+    return <div>{val}</div>;
+  }
+  ```
+
+  执行过程：
+
+  1. `App`渲染`Child`，将`val`和`getData`传进去
+  2. `Child`使用`useEffect`获取数据。因为对`getData`有依赖，于是将其加入依赖列表
+  3. `getData`执行时，调用`setVal`，导致`App`重新渲染
+  4. `App`重新渲染时生成新的`getData`方法，传给`Child`
+  5. `Child`发现`getData`的引用变了，又会执行`getData`
+  6. 3 -> 5 是一个死循环
+
 ### useMemo
-
-**父组件调用子组件时传递对象属性**，useMemo会在页面初始化的时候执行一次,并把执行的结果缓存一份。即使页面刷新了也不会再执行info的赋值操作。
-
-```js
-import React, { useCallback } from 'react'
-
-function ParentComp () {
-  // ...
-  const [ name, setName ] = useState('hi~')
-  const [ age, setAge ] = useState(20)
-  const changeName = useCallback((newName) => setName(newName), [])
-  const info = { name, age }    // 复杂数据类型属性
-
-  return (
-    <div>
-      <button onClick={increment}>点击次数：{count}</button>
-      <ChildComp info={info} onClick={changeName}/>
-    </div>
-  );
-}
-```
-
-- 点击父组件按钮，触发父组件重新渲染；
-- 父组件渲染，`const info = { name, age }` 一行会重新生成一个新对象，导致传递给子组件的 info 属性值变化，进而导致子组件重新渲染。
-
-使用 useMemo 对对象属性包一层。
-
-useMemo 有两个参数：
-
-- 第一个参数是个函数，返回的对象指向同一个引用，不会创建新对象；
-- 第二个参数是个数组，只有数组中的变量改变时，第一个参数的函数才会返回一个新的对象。
-
-```js
-function ParentComp () {
-  // ....
-  const [ name, setName ] = useState('hi~')
-  const [ age, setAge ] = useState(20)
-  const changeName = useCallback((newName) => setName(newName), [])
-  const info = useMemo(() => ({ name, age }), [name, age])   // 包一层
-
-  return (
-    <div>
-      <button onClick={increment}>点击次数：{count}</button>
-      <ChildComp info={info} onClick={changeName}/>
-    </div>
-  );
-}
-```
 
 # 路由
 
-路由是一种向用户显示不同页面的能力。 这意味着用户可以通过输入 URL 或单击页面元素在 WEB 应用的不同部分之间切换。
-
-安装`react-router-dom`:
-
-```shell
-yarn add react-router-dom
-```
+路由是一种向用户显示不同页面的能力。 这意味着用户可以通过输入 URL 或单击页面元素在 WEB 应用的不同部分之间切换
 
 这里需要说明一下 React Router 库中几个不同的 npm 依赖包，每个包都有不同的用途
 
-- `react-router`: 实现了路由的核心功能，用作下面几个包的运行时依赖项(peer dependency)。
-- `react-router-dom`: 用于 React WEB 应用的路由依赖. 基于 react-router，加入了在浏览器运行环境下的一些功能，例如：**`BrowserRouter` 和 `HashRouter` 组件，前者使用 `pushState` 和 `popState` 事件构建路由;后者使用 `window.location.hash` 和 `hashchange` 事件构建路由**
-- `react-router-native`: 用于 React Native 应用的路由依赖。基于 react-router，加入了 react-native 运行环境下的一些功能
-- `react-router-config`: 用于配置静态路由的工具库
+| 相关组件            | 功能                                                         |
+| ------------------- | ------------------------------------------------------------ |
+| react-router        | 实现了路由的核心功能，用作下面几个包的运行时依赖项(peer dependency)。 |
+| react-router-dom    | 基于 `react-router` 添加了浏览器运行环境的一些组件和功能。   |
+| react-router-native | 适用于 `React Native`                                        |
+| react-router-redux  | React Router 和 Redux 的集成。                               |
+| eact-router-config  | 提供可配置化的路由                                           |
 
 ## React Routers三类组件
 
 ### 路由器Router
 
-`<BrowserRouter>`和`<HashRouter>`
-
-两者之间的主要区别是它们存储URL和与Web服务器通信的方式。
+`<BrowserRouter>`和`<HashRouter>`，两者之间的主要区别是它们存储URL和与Web服务器通信的方式。
 
 #### BrowserRouter
 
@@ -1769,6 +2067,15 @@ yarn add react-router-dom
 
 其他还有 `<MemoryRouter>  内存路由组件`、`<NativeRouter>  Native的路由组件`、`<StaticRouter> 静态路由组件`这些路由组件，其中 MemoryRouter 主要用在 ReactNative 这种非浏览器的环境中，因此直接将 URL 的 history 保存在了内容中。StaticRouter 主要用于服务器端渲染
 
+#### 参数
+
+- **basename: string**
+
+  原因是：ngix服务器上面要放不止一个网站 根目录下面已经有一个网站，这个网站需单独建一个文件夹。
+
+  作用：为所有位置添加一个基准URL
+  使用场景：假如你需要把页面部署到服务器的二级目录，你可以使用 `basename` 设置到此目录。
+
 #### History 的小知识
 
 每个 `<Router>` 组件都会创建一个 `history` 对象，它记录了当前的位置（`history.location`），还记录了堆栈中以前的位置。在当前位置发生变化时，页面会被重新渲染，于是你就有一种导航跳转的感觉。
@@ -1797,89 +2104,92 @@ yarn add react-router-dom
 
 当 location 与 Route 的 path 匹配时渲染 Route 中的 Component
 
-- **Route 接受三种渲染方式**
+##### **三种渲染方式**
 
-  - `<Route component>`
+- `<Route component>`
 
-  - `<Route render>`
-    
-    `render` function 类型，Route 会渲染这个 function 的返回值，可以在函数中附加一些额外的逻辑，所以你可以在render中添加一些逻辑判断，再返回一个要渲染的 component
+- `<Route render>`
+  
+  `render` function 类型，Route 会渲染这个 function 的返回值，可以在函数中附加一些额外的逻辑，所以你可以在render中添加一些逻辑判断，再返回一个要渲染的 component
 
-  - `<Route children>`
+- `<Route children>`
 
-    `children` function 类型，比 `render` 多了 `match参数`，可以根据 match参数来决定匹配的时候渲染什么，不匹配的时候渲染什么
-    
-  - ```
-     <Route exact path="/">
-                <Home />
-              </Route>
-    ```
+  `children` function 类型，比 `render` 多了 `match参数`，可以根据 match参数来决定匹配的时候渲染什么，不匹配的时候渲染什么
 
-    
+##### **参数**
 
-- **route属性**
+[说明文字](#jump)
 
-  - `exact` 是否进行精确匹配，路由 `/a` 可以和 `/a/、/a` 匹配
+- <a id="exact">exact</a> 是否进行精确匹配，路由 `/a` 可以和 `/a/、/a` 匹配
 
-  - `strict` 是否进行严格匹配，指明路径只匹配以斜线结尾的路径，路由`/a`可以和`/a`匹配，不能和`/a/`匹配，相比 `exact` 会更严格些
-
-  - `path (string)` 标识路由的路径,`path`属性可以使用通配符。
-
-    ```
-    <Route path="/hello/:name">
-    ```
-
-      通配符的规则如下:
-
-  > **（1）`:paramName`**
+  > 当exact为false时，根据路由匹配所有组件，例如/a/b/c 能匹配到/、/a、/a/b、/a/b/c 且匹配还是按顺序的
   >
-  > `:paramName`匹配URL的一个部分，直到遇到下一个`/`、`?`、`#`为止。这个路径参数可以通过`this.props.params.paramName`取出。
-  >
-  > **（2）`()`**
-  >
-  > `()`表示URL的这个部分是可选的。
-  >
-  > **（3）`\*`**
-  >
-  > `*`匹配任意字符，直到模式里面的下一个字符为止。匹配方式是非贪婪模式。
-  >
-  > **（4） `\**`**
-  >
-  > `**` 匹配任意字符，直到下一个`/`、`?`、`#`为止。匹配方式是贪婪模式。
+  > 例如路由设置的前后顺序为:
+  > 1./ ；
+  > 2./a；
+  > 3./a/b ; 
+  > 4./a/b/c
+  > 且前3个路径都没有设置 exact，这样前3个组件**都会被渲染**并且默认将2当作1的子页面，3当作2的子页面
 
-  - `component` 表示路径对应显示的组件
-  - `location (object)` 除了通过 path 传递路由路径，也可以通过传递 location 对象可以匹配
-  - `sensitive (boolean)` 匹配路径时，是否区分大小写
+- `strict` 是否进行严格匹配，指明路径只匹配以斜线结尾的路径，路由`/a`可以和`/a`匹配，不能和`/a/`匹配，相比 `exact` 会更严格些
 
-- **属性的隐式传递**
+- `path (string)` 标识路由的路径,`path`属性可以使用通配符。
 
   ```
-  location、history、match
+  <Route path="/hello/:name">
   ```
 
-  - 三个 props 比较常用的是 match，通过 match.params 可以取到动态参数的值
+    通配符的规则如下:
 
-  | 所属     | 属性                   | 类型     | 含义                                              |
-  | -------- | ---------------------- | -------- | ------------------------------------------------- |
-  | history  | length                 | number   | 表示history堆栈的数量                             |
-  |          | action                 | string   | 表示当前的动作。比如pop、replace或push            |
-  |          | location               | object   | 表示当前的位置                                    |
-  |          | push(path, [state])    | function | 在history堆栈顶加入一个新的条目                   |
-  |          | replace(path, [state]) | function | 替换在history堆栈中的当前条目                     |
-  |          | go(n)                  | function | 将history堆栈中的指针向前移动                     |
-  |          | goBack()               | function | 等同于go(-1)                                      |
-  |          | goForward()            | function | 等同于go(1)                                       |
-  |          | block(promt)           | function | 阻止跳转                                          |
-  |          |                        |          |                                                   |
-  | match    | params                 | object   | 表示路径参数，通过解析URL中动态的部分获得的键值对 |
-  |          | isExact                | boolean  | 为true时，表示精确匹配                            |
-  |          | path                   | string   | 用来做匹配的路径格式                              |
-  |          | url                    | string   | URL匹配的部分                                     |
-  |          |                        |          |                                                   |
-  | location | pathname               | string   | URL路径                                           |
-  |          | search                 | string   | URl中查询字符串                                   |
-  |          | hash                   | string   | URL的hash分段                                     |
-  |          | state                  | string   | 表示location中的状态                              |
+> **（1）`:paramName`**
+>
+> `:paramName`匹配URL的一个部分，直到遇到下一个`/`、`?`、`#`为止。这个路径参数可以通过`this.props.params.paramName`取出。
+>
+> **（2）`()`**
+>
+> `()`表示URL的这个部分是可选的。
+>
+> **（3）`\*`**
+>
+> `*`匹配任意字符，直到模式里面的下一个字符为止。匹配方式是非贪婪模式。
+>
+> **（4） `\**`**
+>
+> `**` 匹配任意字符，直到下一个`/`、`?`、`#`为止。匹配方式是贪婪模式。
+
+- `component` 表示路径对应显示的组件
+- `location (object)` 除了通过 path 传递路由路径，也可以通过传递 location 对象可以匹配
+- `sensitive (boolean)` 匹配路径时，是否区分大小写
+
+##### **属性的隐式传递**
+
+```
+location、history、match
+```
+
+- 三个 props 比较常用的是 match，通过 match.params 可以取到动态参数的值
+
+| 所属     | 属性                   | 类型     | 含义                                              |
+| -------- | ---------------------- | -------- | ------------------------------------------------- |
+| history  | length                 | number   | 表示history堆栈的数量                             |
+|          | action                 | string   | 表示当前的动作。比如pop、replace或push            |
+|          | location               | object   | 表示当前的位置                                    |
+|          | push(path, [state])    | function | 在history堆栈顶加入一个新的条目                   |
+|          | replace(path, [state]) | function | 替换在history堆栈中的当前条目                     |
+|          | go(n)                  | function | 将history堆栈中的指针向前移动                     |
+|          | goBack()               | function | 等同于go(-1)                                      |
+|          | goForward()            | function | 等同于go(1)                                       |
+|          | block(promt)           | function | 阻止跳转                                          |
+|          |                        |          |                                                   |
+| match    | params                 | object   | 表示路径参数，通过解析URL中动态的部分获得的键值对 |
+|          | isExact                | boolean  | 为true时，表示精确匹配                            |
+|          | path                   | string   | 用来做匹配的路径格式                              |
+|          | url                    | string   | URL匹配的部分                                     |
+|          |                        |          |                                                   |
+| location | pathname               | string   | URL路径                                           |
+|          | search                 | string   | URl中查询字符串                                   |
+|          | hash                   | string   | URL的hash分段                                     |
+|          | state                  | string   | 表示location中的状态                              |
 
 #### Swtich
 
@@ -1895,22 +2205,6 @@ yarn add react-router-dom
   <Route path="/:dog" component={Husky}></Route>
 </Switch>
 ```
-
-#### Redirect
-
-重定向，新位置将覆盖历史堆栈中的当前位置
-
-- `from (string)` 需要重定向的路径，可以包括动态参数
-
-  `push (boolean)` 为 true 时，重定向会将新条目推入历史记录，而不是替换当前条目
-
-  `to (string | object)` 重定向到的路径
-
-  `exact (boolean)` 是否要对 from 进行精确匹配
-
-  `strict (boolean)` 是否要对 from 进行严格匹配
-
-  `sensitive (boolean)` 匹配 from 时是否区分大小写
 
 ### Link
 
@@ -1971,6 +2265,22 @@ yarn add react-router-dom
 - `activeStyle (Object)` 元素处于选中状态时，应用于元素的样式
 - `isActive(function)` 添加额外逻辑以确定链接是否处于活动状态
 
+#### Redirect
+
+重定向，新位置将覆盖历史堆栈中的当前位置
+
+- `from (string)` 需要重定向的路径，可以包括动态参数
+
+  `push (boolean)` 为 true 时，重定向会将新条目推入历史记录，而不是替换当前条目
+
+  `to (string | object)` 重定向到的路径
+
+  `exact (boolean)` 是否要对 from 进行精确匹配
+
+  `strict (boolean)` 是否要对 from 进行严格匹配
+
+  `sensitive (boolean)` 匹配 from 时是否区分大小写
+
 ### IndexRoute和IndexRedirect
 
 #### Index Routes
@@ -1986,8 +2296,7 @@ yarn add react-router-dom
 </Router>
 ```
 
-其中 App 组件一般情况下是一个 layout，比如包含了 header、footer 或者其他内容，其下面的 route 会被嵌入到这个 App 中（它们将成为 App 的
-children），但这样配置路由有一个问题，就是我们访问 `http://localhost:3000/` 这个地址时，你会发现仅渲染了一个 App 的 layout 内容，Accounts 和 Statements 都没有被渲染，这种情况下我们一般会设置一个默认页，当访问 `/` 这个路由时显示这个默认页。由此就需要用到 `IndexRoute` 功能，修改一下路由如下所示：
+当用户访问 `/` 时, App 组件被渲染，但组件内的子元素却没有， `App` 内部的 `this.props.children` 为 undefined 。 你可以简单地使用 `{this.props.children ||}` 来渲染一些默认的 UI 组件。
 
 ```jsx
 <Router>
@@ -2024,11 +2333,10 @@ children），但这样配置路由有一个问题，就是我们访问 `http://
 - IndexRoute 一般情况下用于设计一个默认页且不改变 URL 地址，而 IndexRedirect 则是跳转默认地址且地址会发生改变。
 - IndexRoute 指定一个组件作为默认页，而 IndexRedirect 指定一个路由地址作为跳转地址。
 
-## API
+## Hooks
 
-### Hooks
+### useHistory
 
-- useHistory
 - 用以获取history对象，进行编程式的导航
 
 ```
@@ -2047,8 +2355,9 @@ const Husky = props => {
 复制代码
 ```
 
-- useLocation
-  - 用以获取location对象，可以查看当前路由信息
+### useLocation
+
+- 用以获取location对象，可以查看当前路由信息
 
 ```
 const Husky = props => {
@@ -2059,8 +2368,9 @@ const Husky = props => {
 复制代码
 ```
 
-- useParams
-  - 可以用来获取 match.params
+### useParams
+
+- 可以用来获取 match.params
 
 ```
 const Husky = props => {
@@ -2074,8 +2384,9 @@ const Husky = props => {
 复制代码
 ```
 
-- useRouteMatch
-  - 可以接受一个 path 字符串作为参数。当参数的path与当前的路径相匹配时，useRouteMatch会返回 match 对象，否则返回 null。
+### useRouteMatch
+
+- 可以接受一个 path 字符串作为参数。当参数的path与当前的路径相匹配时，useRouteMatch会返回 match 对象，否则返回 null。
 
 ```
 // 接收一个字符串作为参数
@@ -2088,9 +2399,125 @@ const Husky = props => {
 }
 ```
 
-# Redux
+## 实战
 
-https://juejin.cn/post/6844903602926927880
+### 路由嵌套
+
+可以通过嵌套 `route` 来实现路由嵌套，注意[exact](#exact)
+
+```jsx
+//根路由
+<Switch>
+    <Route path="router" component={Router}></Route>
+</Switch>
+//Router.jsx
+<span>router</span>
+<ul>
+    <li>
+        <Link to="/router/second/1">1</Link>
+    </li>
+    <li>
+        <Link to="/router/second/12">2</Link>
+    </li>
+</ul>
+//子路由的配置分散到各组件中
+<Switch>
+    <Route exact path="/router/second/:id" component={Second}></Route>
+</Switch>
+```
+
+注意：如果在父路由中开启 exact 匹配，就会导致子组件加载不出来
+
+### 路由懒加载
+
+https://zh-hans.reactjs.org/docs/code-splitting.html
+
+**Suspense和lazy**
+
+如果我们项目有三个模块，用户管理（UserManage）、资产管理（AssetManage）、考勤管理（AttendanceManage）。当我们进入首页的时候由于没有进入任何一个模块，为了提高响应效率是不需要进行模块资源加载的，同时当我们进入用户管理的时候只需要加载用户管理路由对应的模块资源，进入其他模块亦然。这时候我们就需要对代码进行拆分，React.lazy可以结合Router来对模块进行懒加载。
+
+```jsx
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
+
+// 懒加载引入组件 在用到路由组件时才发送请求
+// 通过React的lazy函数配合import()函数动态加载路由组件 ===> 路由组件代码会被分开打包 
+
+const Home = lazy(() => import('./routes/Home'));
+const UserManage = lazy(() => import('./routes/UserManage'));
+const AssetManage = lazy(() => import('./routes/AssetManage'));
+const AttendanceManage = lazy(() => import('./routes/AttendanceManage'));
+
+const App = () => (
+  <Router>
+     {/* 用Suspense包含所有需要注册的路由 fallback为响应未回来时显示的内容 */}
+    <Suspense fallback={<div>Loading...</div>}>
+      <Switch>
+        <Route exact path="/" component={Home}/>
+        <Route path="/userManage" component={UserManage}/>
+        <Route path="/assetManage" component={AssetManage}/>
+        <Route path="/attendanceManage" component={AttendanceManage}/>
+      </Switch>
+    </Suspense>
+  </Router>
+)
+```
+
+### withRouter
+
+本质: 高阶组件
+
+作用: 可以在非路由组件中注入路由对象
+
+在没有路由指向(就是没有Route对象)的组件默认this.props当中没有路由所需要的参数，使用withRouter可以添加
+
+# 状态管理器
+
+## **Mobx**
+
+作为了解的内容，在项⽬中使⽤redux的情况更多。
+
+Mobx是⼀个功能强⼤，上⼿⾮常容易的状态管理⼯具。redux的作者也曾经向⼤家推荐过它，在不少情况下可以使⽤Mobx来替代掉redux。
+
+## hox
+
+**定义 Model**： 用 `createModel` 包装后，就变成了持久化，且全局共享的数据。 
+
+```javascript
+import { createModel } from 'hox';
+
+/* 任意一个 custom Hook */
+function useCounter() {
+  const [count, setCount] = useState(0);
+  const decrement = () => setCount(count - 1);
+  const increment = () => setCount(count + 1);
+  return {
+    count,
+    decrement,
+    increment
+  };
+}
+
+export default createModel(useCounter)
+```
+
+**使用 Model**：`createModel` 返回值是个 Hook，你可以按 React Hooks 的用法正常使用它。
+
+```javascript
+import { useCounterModel } from "../models/useCounterModel";
+
+function App(props) {
+  const counter = useCounterModel();
+  return (
+    <div>
+      <p>{counter.count}</p>
+      <button onClick={counter.increment}>Increment</button>
+    </div>
+  );
+}
+```
+
+## Redux
 
 Redux是将整个应用状态存储到一个地方，称为store。里面保存一棵状态树(state tree)。组件可以派发(dispatch)行为(action)给store,action发出命令后将state放入reucer加工函数中，返回新的state。其它组件可以通过订阅store中的状态(state)来刷新自己的视图
 
@@ -2098,13 +2525,13 @@ Redux是将整个应用状态存储到一个地方，称为store。里面保存�
 
 
 
-## 三大原则
+### 三大原则
 
-### 单一数据源
+#### 单一数据源
 
 **整个应用的state被储存在一棵 object tree 中，并且这个 object tree 只存在于唯一一个store 中。**
 
-### State 是只读的
+#### State 是只读的
 
 **唯一改变 state 的方法就是触发 action，action 是一个用于描述已发生事件的普通对象。**
 
@@ -2131,7 +2558,7 @@ boundAddTodo(text);
 //store 里能直接通过 store.dispatch() 调用 dispatch() 方法，但是多数情况下你会使用 react-redux 提供的 connect() 帮助器来调用。
 ```
 
-### 使用纯函数来执行修改
+#### 使用纯函数来执行修改
 
 **reducer 就是一个纯函数，接收旧的 state 和 action，返回新的 state。**
 
@@ -2182,13 +2609,13 @@ store.dispatch(actions.increase()) // {count: 2}
 store.dispatch(actions.increase()) // {count: 3}
 ```
 
-## 项目构建
+### store构建
 
-**目录结构**
+#### **目录结构**
 
 [![屏幕截图](https://z3.ax1x.com/2021/01/19/sgpjbR.png)](https://imgchr.com/i/sgpjbR)
 
-### action
+#### action
 
 **存放描述行为的数据结构(本质上是 JavaScript 普通对象),一般来说你会通过 store.dispatch() 将 action 传到 store。**
 
@@ -2209,7 +2636,7 @@ export const decrement = ()=>{
 
 注意：当我们表示用户完成任务的动作序列号时，我们还需要再添加一个 action index 来，所以我们通过下标 `index` 来引用特定的任务。而实际项目中一般会在新建数据的时候生成唯一的 ID 作为数据的引用标识。
 
-### **Reducer**
+#### **Reducer**
 
 **Reducers** 指定了应用状态的变化如何响应 [actions](https://www.redux.org.cn/docs/basics/Actions.html) 并发送到 store 的。
 
@@ -2239,7 +2666,7 @@ export default combineReducers({
 
 ```
 
-### store
+#### store
 
 **注意：Redux 应用只有一个单一的 store**
 
@@ -2287,6 +2714,8 @@ export default configureStore()
 
 https://www.ruanyifeng.com/blog/2016/09/redux_tutorial_part_two_async_operations.html
 
+![img](https://upload-images.jianshu.io/upload_images/18616547-35a9f5f3f9956a6b.png?imageMogr2/auto-orient/strip|imageView2/2/w/800/format/webp)
+
 Action 发出以后，Reducer 立即算出 State，这叫做同步；Action 发出以后，过一段时间再执行 Reducer，这就是异步。
 在实际的开发中，redux中管理的很多数据可能来自服务器，我们需要进行异步的请求，再将数据保存到redux中。就是说在异步的网络请求中通过dispatch action来更新state中的数据。这时候就需要用到Redux中间件**(指这个框架允许我们在某个流程的执行中间插入我们自定义的一段代码)**。
 
@@ -2297,30 +2726,78 @@ Action 发出以后，Reducer 立即算出 State，这叫做同步；Action 发�
 - 你可以使用 [redux-saga](https://github.com/yelouafi/redux-saga/) 中间件来创建更加复杂的异步 action。
 - 你可以使用 [redux-pack](https://github.com/lelandrichardson/redux-pack) 中间件 dispatch 基于 Promise 的异步 Action。
 
-## react-redux
+### API
 
-http://www.ruanyifeng.com/blog/2016/09/redux_tutorial_part_three_react-redux.html
+#### Provider 组件
 
-React-Redux 将所有组件分成两大类：UI 组件（presentational component）和容器组件（container component）。
+`<Provider store>` 使组件层级中的 `connect()` 方法都能够获得 Redux store。正常情况下，你的根组件应该嵌套在 `<Provider>` 中才能使用 `connect()` 方法。
 
-UI 组件有以下几个特征。
+React-Redux 提供`Provider`组件，可以让容器组件拿到`state`。
 
-> - 只负责 UI 的呈现，不带有任何业务逻辑
-> - 没有状态（即不使用`this.state`这个变量）
-> - 所有数据都由参数（`this.props`）提供
-> - 不使用任何 Redux 的 API
+> ```javascript
+> import { Provider } from 'react-redux'
+> import { createStore } from 'redux'
+> import todoApp from './reducers'
+> import App from './components/App'
+> 
+> let store = createStore(todoApp);
+> 
+> render(
+> <Provider store={store}>
+>  <App />
+> </Provider>,
+> document.getElementById('root')
+> )
+> ```
 
-容器组件的特征恰恰相反。
+上面代码中，`Provider`在根组件外面包了一层，这样一来，`App`的所有子组件就默认都可以拿到`state`了。
 
-> - 负责管理数据和业务逻辑，不负责 UI 的呈现
-> - 带有内部状态
-> - 使用 Redux 的 API
+**它的原理是`React`组件的[`context`](https://facebook.github.io/react/docs/context.html)属性**，请看源码。
 
-UI 组件负责 UI 的呈现，容器组件负责管理数据和逻辑。
+> ```javascript
+> class Provider extends Component {
+> getChildContext() {
+>  return {
+>    store: this.props.store
+>  };
+> }
+> render() {
+>  return this.props.children;
+> }
+> }
+> 
+> Provider.childContextTypes = {
+> store: React.PropTypes.object
+> }
+> ```
 
-如果一个组件既有 UI 又有业务逻辑，那怎么办？回答是，将它拆分成下面的结构：外面是一个容器组件，里面包了一个UI 组件。前者负责与外部的通信，将数据传给后者，由后者渲染出视图。所有的 UI 组件都由用户提供，容器组件则是由 React-Redux 自动生成
+上面代码中，`store`放在了上下文对象`context`上面。然后，子组件就可以从`context`拿到`store`，代码大致如下。
 
-### connect()
+> ```js
+> class VisibleTodoList extends Component {
+> componentDidMount() {
+>  const { store } = this.context;
+>  this.unsubscribe = store.subscribe(() =>
+>    this.forceUpdate()
+>  );
+> }
+> 
+> render() {
+>  const props = this.props;
+>  const { store } = this.context;
+>  const state = store.getState();
+>  // ...
+> }
+> }
+> 
+> VisibleTodoList.contextTypes = {
+> store: React.PropTypes.object
+> }
+> ```
+
+`React-Redux`自动生成的容器组件的代码，就类似上面这样，从而拿到`store`。
+
+#### connect
 
 React-Redux 提供`connect`方法，用于从 UI 组件生成容器组件。`connect`的意思，就是将这两种组件连起来。
 
@@ -2343,24 +2820,24 @@ React-Redux 提供`connect`方法，用于从 UI 组件生成容器组件。`con
 > import { connect } from 'react-redux'
 > 
 > const VisibleTodoList = connect(
->   mapStateToProps,
->   mapDispatchToProps
+> mapStateToProps,
+> mapDispatchToProps
 > )(TodoList)
 > ```
 
 上面代码中，`connect`方法接受两个参数：`mapStateToProps`和`mapDispatchToProps`。它们定义了 UI 组件的业务逻辑。前者负责输入逻辑，即将`state`映射到 UI 组件的参数（`props`），后者负责输出逻辑，即将用户对 UI 组件的操作映射成 Action。
 
-### mapStateToProps()
+##### mapStateToProps()
 
-`mapStateToProps`是一个函数。它的作用就是像它的名字那样，建立一个从（外部的）`state`对象到（UI 组件的）`props`对象的映射关系。
+`mapStateToProps`是一个函数。它的作用就是像它的名字那样，建立一个从（外部的）`state`对象到（UI 组件的）`props`对象的映射关系。也就是说， **把state映射到props中去** 
 
 作为函数，`mapStateToProps`执行后应该返回一个对象，里面的每一个键值对就是一个映射。请看下面的例子。
 
 > ```javascript
 > const mapStateToProps = (state) => {
->     return {
->        todos: getVisibleTodos(state.todos, state.visibilityFilter)
->     }
+>  return {
+>     todos: getVisibleTodos(state.todos, state.visibilityFilter)
+>  }
 > }
 > ```
 
@@ -2370,16 +2847,16 @@ React-Redux 提供`connect`方法，用于从 UI 组件生成容器组件。`con
 
 > ```javascript
 > const getVisibleTodos = (todos, filter) => {
->   switch (filter) {
->     case 'SHOW_ALL':
->       return todos
->     case 'SHOW_COMPLETED':
->       return todos.filter(t => t.completed)
->     case 'SHOW_ACTIVE':
->       return todos.filter(t => !t.completed)
->     default:
->       throw new Error('Unknown filter: ' + filter)
->   }
+> switch (filter) {
+>  case 'SHOW_ALL':
+>    return todos
+>  case 'SHOW_COMPLETED':
+>    return todos.filter(t => t.completed)
+>  case 'SHOW_ACTIVE':
+>    return todos.filter(t => !t.completed)
+>  default:
+>    throw new Error('Unknown filter: ' + filter)
+> }
 > }
 > ```
 
@@ -2394,9 +2871,9 @@ React-Redux 提供`connect`方法，用于从 UI 组件生成容器组件。`con
 > //    </FilterLink>
 > 
 > const mapStateToProps = (state, ownProps) => {
->   return {
->     active: ownProps.filter === state.visibilityFilter
->   }
+> return {
+>  active: ownProps.filter === state.visibilityFilter
+> }
 > }
 > ```
 
@@ -2404,25 +2881,25 @@ React-Redux 提供`connect`方法，用于从 UI 组件生成容器组件。`con
 
 `connect`方法可以省略`mapStateToProps`参数，那样的话，UI 组件就不会订阅Store，就是说 Store 的更新不会引起 UI 组件的更新。
 
-### mapDispatchToProps()
+##### mapDispatchToProps()
 
-`mapDispatchToProps`是`connect`函数的第二个参数，用来建立 UI 组件的参数到`store.dispatch`方法的映射。也就是说，它定义了哪些用户的操作应该当作 Action，传给 Store。它可以是一个函数，也可以是一个对象。
+`mapDispatchToProps`是`connect`函数的第二个参数，**用来建立各种dispatch变成props，让你可以直接使用  UI 组件的参数到`store.dispatch`方法的映射**。也就是说，**把各种dispatch变成了props让你可以直接使用** 
 
 如果`mapDispatchToProps`是一个函数，会得到`dispatch`和`ownProps`（容器组件的`props`对象）两个参数。
 
 > ```javascript
 > const mapDispatchToProps = (
->   dispatch,
->   ownProps
+> dispatch,
+> ownProps
 > ) => {
->   return {
->     onClick: () => {
->       dispatch({
->         type: 'SET_VISIBILITY_FILTER',
->         filter: ownProps.filter
->       });
->     }
->   };
+> return {
+>  onClick: () => {
+>    dispatch({
+>      type: 'SET_VISIBILITY_FILTER',
+>      filter: ownProps.filter
+>    });
+>  }
+> };
 > }
 > ```
 
@@ -2432,83 +2909,16 @@ React-Redux 提供`connect`方法，用于从 UI 组件生成容器组件。`con
 
 > ```javascript
 > const mapDispatchToProps = {
->   onClick: (filter) => {
->     type: 'SET_VISIBILITY_FILTER',
->     filter: filter
->   };
+> onClick: (filter) => {
+>  type: 'SET_VISIBILITY_FILTER',
+>  filter: filter
+> };
 > }
 > ```
 
-### Provider 组件
 
-`<Provider store>` 使组件层级中的 `connect()` 方法都能够获得 Redux store。正常情况下，你的根组件应该嵌套在 `<Provider>` 中才能使用 `connect()` 方法。
 
-React-Redux 提供`Provider`组件，可以让容器组件拿到`state`。
-
-> ```javascript
-> import { Provider } from 'react-redux'
-> import { createStore } from 'redux'
-> import todoApp from './reducers'
-> import App from './components/App'
-> 
-> let store = createStore(todoApp);
-> 
-> render(
->   <Provider store={store}>
->     <App />
->   </Provider>,
->   document.getElementById('root')
-> )
-> ```
-
-上面代码中，`Provider`在根组件外面包了一层，这样一来，`App`的所有子组件就默认都可以拿到`state`了。
-
-它的原理是`React`组件的[`context`](https://facebook.github.io/react/docs/context.html)属性，请看源码。
-
-> ```javascript
-> class Provider extends Component {
->   getChildContext() {
->     return {
->       store: this.props.store
->     };
->   }
->   render() {
->     return this.props.children;
->   }
-> }
-> 
-> Provider.childContextTypes = {
->   store: React.PropTypes.object
-> }
-> ```
-
-上面代码中，`store`放在了上下文对象`context`上面。然后，子组件就可以从`context`拿到`store`，代码大致如下。
-
-> ```js
-> class VisibleTodoList extends Component {
->   componentDidMount() {
->     const { store } = this.context;
->     this.unsubscribe = store.subscribe(() =>
->       this.forceUpdate()
->     );
->   }
-> 
->   render() {
->     const props = this.props;
->     const { store } = this.context;
->     const state = store.getState();
->     // ...
->   }
-> }
-> 
-> VisibleTodoList.contextTypes = {
->   store: React.PropTypes.object
-> }
-> ```
-
-`React-Redux`自动生成的容器组件的代码，就类似上面这样，从而拿到`store`。
-
-### 实例：计数器
+##### 实例：计数器
 
 我们来看一个实例。下面是一个计数器组件，它是一个纯的 UI 组件。
 
@@ -2518,29 +2928,29 @@ React-Redux 提供`Provider`组件，可以让容器组件拿到`state`。
 > import { increment, decrement } from "../../store/actions/counter";
 > 
 > const Home = function (props) {
->     //生成props
->   const { count, onincrement, ondecrement} = props;
->   // console.log(props);
->   return (
->       <div>
->         <Button
->           variant="contained"
->           color="primary"
->           onClick={onincrement}
->         >
->           increment
->         </Button>
->         <Button
->           variant="contained"
->           color="primary"
->           onClick={ondecrement}
->           style={{marginLeft:'30px'}}
->         >
->           decrement
->         </Button>
->         <p style={{fontSize:'30px'}}>{count}</p>
->       </div>
->   );
+>  //生成props
+> const { count, onincrement, ondecrement} = props;
+> // console.log(props);
+> return (
+>    <div>
+>      <Button
+>        variant="contained"
+>        color="primary"
+>        onClick={onincrement}
+>      >
+>        increment
+>      </Button>
+>      <Button
+>        variant="contained"
+>        color="primary"
+>        onClick={ondecrement}
+>        style={{marginLeft:'30px'}}
+>      >
+>        decrement
+>      </Button>
+>      <p style={{fontSize:'30px'}}>{count}</p>
+>    </div>
+> );
 > };
 > ```
 
@@ -2550,16 +2960,16 @@ React-Redux 提供`Provider`组件，可以让容器组件拿到`state`。
 
 > ```javascript
 > function mapStateToProps(state) {
->     console.log(state)
->      return {
->       count: state.counter.count,
->   };
+>  console.log(state)
+>   return {
+>    count: state.counter.count,
+> };
 > }
 > function mapDispatchToProps(dispatch) {
->     return {
->        onincrement: () => dispatch(increment()),
->       ondecrement: () => dispatch(decrement())
->   };
+>  return {
+>     onincrement: () => dispatch(increment()),
+>    ondecrement: () => dispatch(decrement())
+> };
 > }
 > 
 > ```
@@ -2568,7 +2978,7 @@ React-Redux 提供`Provider`组件，可以让容器组件拿到`state`。
 
 > ```javascript
 > export default connect(mapStateToProps, mapDispatchToProps)(Home);
->   ```
+> ```
 
 然后，定义这个组件的 Reducer。
 
@@ -2576,15 +2986,15 @@ React-Redux 提供`Provider`组件，可以让容器组件拿到`state`。
 > // Reducer
 > import {INCREMENT, DECREMENT} from "../actions/counter"
 > export default function(state = { count: 0}, action){
->   const count = state.count
->   switch (action.type) {
->         case INCREMENT:
->           return {count:count + 1};
->         case DECREMENT:
->           return {count:count - 1};
->         default:
->           return {count:count};
->         }
+> const count = state.count
+> switch (action.type) {
+>      case INCREMENT:
+>        return {count:count + 1};
+>      case DECREMENT:
+>        return {count:count - 1};
+>      default:
+>        return {count:count};
+>      }
 > }
 > ```
 
@@ -2596,20 +3006,18 @@ React-Redux 提供`Provider`组件，可以让容器组件拿到`state`。
 > import { Provider } from "react-redux";
 > import store from "../store";
 > export default function Menu() {
->   const classes = useStyles();
->   return (
->     <div className={classes.root}>
->       <Provider store={store}>
->       </Provider>
->     </div>
->   );
+> const classes = useStyles();
+> return (
+>  <div className={classes.root}>
+>    <Provider store={store}>
+>    </Provider>
+>  </div>
+> );
 > }
 > 
 > ```
 
-## API
-
-### createStore
+#### createStore
 
 `createStore(reducer, [preloadedState], enhancer)`
 
@@ -2652,7 +3060,7 @@ console.log(store.getState())
 - 应用中不要创建多个 store！相反，使用 [`combineReducers`](https://www.redux.org.cn/docs/api/combineReducers.html) 来把多个 reducer 创建成一个根 reducer。
 - 要使用多个 store 增强器的时候，你可能需要使用 [compose](https://www.redux.org.cn/docs/api/compose.html)
 
-### Store 方法
+#### Store 方法
 
 Store 就是用来维持应用所有的 state 树 的一个对象。 改变 store 内 state 的惟一途径是对它 dispatch 一个 action。
 
@@ -2661,7 +3069,7 @@ Store 就是用来维持应用所有的 state 树 的一个对象。 改变 stor
 - subscribe(listener)
 - replaceReducer(nextReducer)
 
-### combineReducers
+#### combineReducers
 
 随着应用变得越来越复杂，可以考虑将 [reducer 函数](https://www.redux.org.cn/docs/Glossary.html#reducer) 拆分成多个单独的函数，拆分后的每个函数负责独立管理 [state](https://www.redux.org.cn/docs/Glossary.html#state) 的一部分。
 
@@ -2678,7 +3086,7 @@ combineReducers把一个由多个不同 reducer 函数作为 value 的 object，
 
 合并后的 reducer 可以调用各个子 reducer，并把它们返回的结果合并成一个 state 对象。
 
-### applyMiddleware
+#### applyMiddleware
 
 https://www.ruanyifeng.com/blog/2016/09/redux_tutorial_part_two_async_operations.html
 
@@ -2724,7 +3132,7 @@ store.dispatch({
 // state after dispatch: [ 'Use Redux', 'Understand the middleware' ]
 ```
 
-###   ` compose(...functions)`
+####   ` compose(...functions)`
 
 从右到左来组合多个函数。
 
@@ -2753,6 +3161,10 @@ const store = createStore(
   )
 )
 ```
+
+
+
+
 
 # TS与React
 
