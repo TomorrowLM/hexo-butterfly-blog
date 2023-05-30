@@ -2,21 +2,50 @@
 # see https://butterfly.js.org/posts/4aa8abbe/#導航菜單
 # --------------------------------------
 
+# layout
+# --------------------------------------
 menu:
   首页: / || fas fa-home
+  目录: /categories/ || fas fa-folder-open
   文章: /archives/ || fas fa-archive
   Tags: /tags/ || fas fa-tags
-  目录: /categories/ || fas fa-folder-open
+  留言板: /messageboard/ || fa fa-paper-plane
   # 娱乐||fas fa-list:
   #   Music: /music/ || fas fa-music
   #   Movie: /movies/ || fas fa-video
-  留言板: /messageboard/ || fa fa-paper-plane
-  友情链接: /link/ || fas fa-link
+  其他||fas fa-list:
+    音乐馆: /music/ || anzhiyu-icon-music
+    友情链接: /link/ || fas fa-link
+
   # 关于: /about/ || fas fa-heart
 
+# Footer Settings
+# --------------------------------------
+footer:
+  owner:
+    enable: true
+    since: 2020
+  custom_text: 因为热爱，所以专注
+  copyright: true # Copyright of theme and framework
+  bdageitem:
+    - link: https://hexo.io/ #徽标指向网站链接
+      shields: https://npm.elemecdn.com/anzhiyu-blog@2.1.5/img/badge/Frame-Hexo.svg #徽标API
+      message: 博客框架为Hexo_v5.4.0 #徽标提示语
+
+# A simple 404 page
+error_404:
+  enable: false
+  subtitle: "Page Not Found"
+  background: https://i.loli.net/2020/05/19/aKOcLiyPl2JQdFD.png
+
+# toc (目錄)
+toc:
+  post: true
+  page: false
+  number: true
+  style_simple: false # for post
 # Code Blocks (代碼相關)
 # --------------------------------------
-
 highlight_theme: mac light #  darker / pale night / light / ocean / mac / mac light / false
 highlight_copy: true # copy button
 highlight_lang: true # show the code language
@@ -33,16 +62,8 @@ copy:
     enable: false
     limit_count: 200
 
-# social settings (社交圖標設置)
-# formal:
-#   icon: link || the description
-social:
-  # fab fa-github: https://github.com/xxxxx || Github
-  # fas fa-envelope: mailto:xxxxxx@gmail.com || Email
-
 # search (搜索)
 # --------------------------------------
-
 # Algolia search
 algolia_search:
   enable: false
@@ -50,7 +71,7 @@ algolia_search:
     per_page: 6
 
 # Local search
-  # search
+# search
 local_search:
   enable: true
   labels:
@@ -61,6 +82,7 @@ search:
   field: post
   content: true
   template: ./search.xml
+
 # Math (數學)
 # --------------------------------------
 # About the per_page
@@ -82,6 +104,11 @@ katex:
 # Image (圖片設置)
 # --------------------------------------
 
+# social settings (社交圖標設置)
+social:
+  # fab fa-github: https://github.com/xxxxx || Github
+  # fas fa-envelope: mailto:xxxxxx@gmail.com || Email
+
 # Favicon（網站圖標）
 favicon: /img/favicon.png
 
@@ -94,32 +121,31 @@ avatar:
 disable_top_img: false
 
 # The banner image of home page
-index_img: '#ffffff00'
-# /img/header.jpg
+index_img: /img/header.jpg
 
 # If the banner of page not setting, it will show the top_img
-default_top_img: '#ffffff00'
+default_top_img: /img/header.jpg
 
 # The banner image of archive page
-archive_img: '#ffffff00'
+archive_img: /img/header.jpg
 
 # If the banner of tag page not setting, it will show the top_img
 # note: tag page, not tags page (子標籤頁面的 top_img)
-tag_img: /img/touxiang.jpg
+tag_img: /img/header.jpg
 
 # The banner image of tag page
 # format:
 #  - tag name: xxxxx
-tag_per_img: /img/touxiang.jpg
+tag_per_img: /img/header.jpg
 
 # If the banner of category page not setting, it will show the top_img
 # note: category page, not categories page (子分類頁面的 top_img)
-category_img: /img/touxiang.jpg
+category_img: /img/header.jpg
 
 # The banner image of category page
 # format:
 #  - category name: xxxxx
-category_per_img: /img/touxiang.jpg
+category_per_img: /img/header.jpg
 
 cover:
   # display the cover or not (是否顯示文章封面)
@@ -131,19 +157,12 @@ cover:
   position: both
   # When cover is not set, the default cover is displayed (當沒有設置cover時，默認的封面顯示)
   default_cover:
-    - /img/header.jpg
-    - /img/touxiang.jpg
+    - /img/cover_1.gif
 
 # Replace Broken Images (替換無法顯示的圖片)
 error_img:
   flink: /img/friend_404.gif
   post_page: /img/404.jpg
-
-# A simple 404 page
-error_404:
-  enable: false
-  subtitle: 'Page Not Found'
-  background: https://i.loli.net/2020/05/19/aKOcLiyPl2JQdFD.png
 
 post_meta:
   page: # Home Page
@@ -159,6 +178,8 @@ post_meta:
     tags: true # true or false 文章頁是否顯示標籤
     label: true # true or false 顯示描述性文字
 
+# 工具
+# --------------------------------------
 # wordcount (字數統計)
 wordcount:
   enable: true
@@ -178,13 +199,6 @@ index_post_content:
 # Post
 # --------------------------------------
 
-# toc (目錄)
-toc:
-  post: true
-  page: false
-  number: true
-  style_simple: false # for post
-
 post_copyright:
   enable: true
   decode: false
@@ -202,14 +216,6 @@ reward:
     #   link:
     #   text: alipay
 
-# Post edit
-# Easily browse and edit blog source code online.
-post_edit:
-  enable: false
-  # url: https://github.com/user-name/repo-name/edit/branch-name/subdirectory-name/
-  # For example: https://github.com/jerryc127/butterfly.js.org/edit/main/source/
-  url:
-
 # Related Articles
 related_post:
   enable: true
@@ -226,27 +232,8 @@ photofigcaption: false
 # false: disable pagination
 post_pagination: 1
 
-# anchor
-# when you scroll in post, the URL will update according to header id.
-anchor: false
-
-# Displays outdated notice for a post (文章過期提醒)
-noticeOutdate:
-  enable: false
-  style: flat # style: simple/flat
-  limit_day: 500 # When will it be shown
-  position: top # position: top/bottom
-  message_prev: It has been
-  message_next: days since the last update, the content of the article may be outdated.
-
 # Share System (分享功能)
 # --------------------------------------
-
-# AddThis
-# https://www.addthis.com/
-addThis:
-  enable: false
-  pubid:
 
 # Share.js
 # https://github.com/overtrue/share.js
@@ -267,7 +254,7 @@ comments:
   # Up to two comments system, the first will be shown as default
   # Choose: Disqus/Disqusjs/Livere/Gitalk/Valine/Waline/Utterances/Facebook Comments/Twikoo
   use:
-  - Gitalk
+    - Gitalk
   # - Valine
   # - Disqus
   text: true # Display the comment name next to the button
@@ -277,31 +264,12 @@ comments:
   count: false # Display comment count in post's top_img
   card_post_count: false # Display comment count in Home Page
 
-# disqus
-# https://disqus.com/
-disqus:
-  shortname:
-  apikey: # For newest comments widget
-
-# Alternative Disqus - Render comments with Disqus API
-# DisqusJS 評論系統，可以實現在網路審查地區載入 Disqus 評論列表，兼容原版
-# https://github.com/SukkaW/DisqusJS
-disqusjs:
-  shortname:
-  apikey:
-  option:
-
-# livere (來必力)
-# https://www.livere.com/
-livere:
-  uid:
-
 # gitalk
 # https://github.com/gitalk/gitalk
 gitalk:
   client_id: 6bfdb22315df9b919429
   client_secret: 80fa5ba42986f3960283146c3faf03bc34beb4ab
-  repo:  TomorrowLM.github.io
+  repo: TomorrowLM.github.io
   owner: TomorrowLM
   admin: TomorrowLM
   count: true
@@ -323,132 +291,6 @@ valine:
   bg: # valine background
   visitor: false
   option:
-
-# waline - A simple comment system with backend support fork from Valine
-# https://waline.js.org/
-waline:
-  serverURL: # Waline server address url
-  avatar: monsterid # gravatar style https://zh-tw.gravatar.com/site/implement/images/#default-image
-  avatarCDN: # Gravatar CDN baseURL
-  bg: # waline background
-  visitor: false
-  option:
-
-# utterances
-# https://utteranc.es/
-utterances:
-  repo:
-  # Issue Mapping: pathname/url/title/og:title
-  issue_term: title
-  # Theme: github-light/github-dark/github-dark-orange/icy-dark/dark-blue/photon-dark
-  light_theme: github-light
-  dark_theme: photon-dark
-
-# Facebook Comments Plugin
-# https://developers.facebook.com/docs/plugins/comments/
-facebook_comments:
-  app_id:
-  user_id: # optional
-  pageSize: 10 # The number of comments to show
-  order_by: social # social/time/reverse_time
-  lang: en_US # Language en_US/zh_CN/zh_TW and so on
-
-# Twikoo
-# https://github.com/imaegoo/twikoo
-twikoo:
-  envId:
-  region:
-  visitor: false
-  option:
-
-# Chat Services
-# --------------------------------------
-
-# Chat Button [recommend]
-# It will create a button in the bottom right corner of website, and hide the origin button
-chat_btn: false
-
-# The origin chat button is displayed when scrolling up, and the button is hidden when scrolling down
-chat_hide_show: false
-
-# chatra
-# https://chatra.io/
-chatra:
-  enable: false
-  id:
-
-# tidio
-# https://www.tidio.com/
-tidio:
-  enable: false
-  public_key:
-
-# daovoice
-# http://daovoice.io/
-daovoice:
-  enable: false
-  app_id:
-
-# gitter
-# https://gitter.im/
-gitter:
-  enable: false
-  room:
-
-# crisp
-# https://crisp.chat/en/
-crisp:
-  enable: false
-  website_id:
-
-# Footer Settings
-# --------------------------------------
-footer:
-  owner:
-    enable: true
-    since: 2020
-  custom_text: 因为热爱，所以专注
-  copyright: true # Copyright of theme and framework
-
-# Analysis
-# --------------------------------------
-
-# Baidu Analytics
-# https://tongji.baidu.com/web/welcome/login
-baidu_analytics:
-
-# Google Analytics
-# https://analytics.google.com/analytics/web/
-google_analytics:
-
-# CNZZ Analytics
-# https://www.umeng.com/
-cnzz_analytics:
-
-# Cloudflare Analytics
-# https://www.cloudflare.com/zh-tw/web-analytics/
-cloudflare_analytics:
-
-# Microsoft Clarity
-# https://clarity.microsoft.com/
-microsoft_clarity:
-
-# Advertisement
-# --------------------------------------
-
-# Google Adsense (谷歌廣告)
-google_adsense:
-  enable: false
-  auto_ads: true
-  js: https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js
-  client:
-  enable_page_level_ads: true
-
-# Insert ads manually (手動插入廣告)
-# ad:
-#   index:
-#   aside:
-#   post:
 
 # Verification (站長驗證)
 # --------------------------------------
@@ -529,7 +371,7 @@ canvas_fluttering_ribbon:
 # https://github.com/hustcc/canvas-nest.js
 canvas_nest:
   enable: false
-  color: '0,0,255' #color of lines, default: '0,0,0'; RGB values: (R,G,B).(note: use ',' to separate.)
+  color: "0,0,255" #color of lines, default: '0,0,0'; RGB values: (R,G,B).(note: use ',' to separate.)
   opacity: 0.7 # the opacity of line (0~1), default: 0.5.
   zIndex: -1 # z-index property of the background, default: -1.
   count: 99 # the number of lines, default: 99.
@@ -574,7 +416,7 @@ beautify:
   enable: false
   field: post # site/post
   title-prefix-icon: '\f0c1'
-  title-prefix-icon-color: '#F47466'
+  title-prefix-icon-color: "#F47466"
 
 # Global font settings
 # Don't modify the following settings unless you know how they work (非必要不要修改)
@@ -603,13 +445,6 @@ subtitle:
   effect: true
   # loop (循環打字)
   loop: true
-  # source調用第三方服務
-  # source: false 關閉調用
-  # source: 1  調用搏天 api 的隨機語錄（簡體）
-  # source: 2  調用一言網的一句話（簡體）
-  # source: 3  調用一句網（簡體）
-  # source: 4  調用今日詩詞（簡體）
-  # subtitle 會先顯示 source , 再顯示 sub 的內容
   source: false
   # 如果關閉打字效果，subtitle 只會顯示 sub 的第一行文字
   sub:
@@ -700,9 +535,9 @@ translate:
   # Time delay
   translateDelay: 0
   # The text of the button when the language is Simplified Chinese
-  msgToTraditionalChinese: '繁'
+  msgToTraditionalChinese: "繁"
   # The text of the button when the language is Traditional Chinese
-  msgToSimplifiedChinese: '簡'
+  msgToSimplifiedChinese: "簡"
 
 # Read Mode (閲讀模式)
 readmode: true
@@ -767,15 +602,6 @@ note:
 # other
 # --------------------------------------
 
-# Pjax
-# It may contain bugs and unstable, give feedback when you find the bugs.
-# https://github.com/MoOx/pjax
-pjax:
-  enable: false
-  exclude:
-    # - xxxx
-    # - xxxx
-
 # Inject the css and script (aplayer/meting)
 aplayerInject:
   enable: true
@@ -788,18 +614,18 @@ aplayerInject:
 snackbar:
   enable: false
   position: bottom-left
-  bg_light: '#49b1f5d6' # The background color of Toast Notification in light mode
-  bg_dark: '#121212' # The background color of Toast Notification in dark mode
-
-# https://instant.page/
-# prefetch (預加載)
-instantpage: false
+  bg_light: "#49b1f5" # The background color of Toast Notification in light mode
+  bg_dark: "#121212" # The background color of Toast Notification in dark mode
 
 # https://github.com/vinta/pangu.js
 # Insert a space between Chinese character and English character (中英文之間添加空格)
 pangu:
   enable: false
   field: site # site/post
+
+# https://instant.page/
+# prefetch (預加載)
+instantpage: false
 
 # Lazyload (圖片懶加載)
 # https://github.com/verlok/vanilla-lazyload
@@ -832,13 +658,12 @@ css_prefix: true
 # 插入代码到头部 </head> 之前 和 底部 </body> 之前
 inject:
   head:
-      - '<style type="text/css">#toggle-sidebar {left:100px}</style>'
-      - <link rel="stylesheet" href="/css/custom.css"></link>
-    # - <link rel="stylesheet" href="/xxx.css">
+    - <link rel="stylesheet" href="/css/custom/custom.css">
   bottom:
-      - <div class="aplayer no-destroy" data-id="4929980436" data-server="netease" data-type="playlist" data-fixed="true" data-mini="true" data-listFolded="false" data-order="random" data-preload="none" data-autoplay="false" muted></div>
-      - <script src="/js/custom.js"></script>
-
+    - <div class="aplayer no-destroy" data-id="4929980436" data-server="netease" data-type="playlist" data-fixed="true" data-mini="true" data-listFolded="false" data-order="random" data-preload="none" data-autoplay="false" muted></div>
+    - <script src="/js/custom.js"></script>
+    # 顶部小进度条
+    - <script data-pjax src="//npm.elemecdn.com/pace-js@1.2.4/pace.min.js"></script>
 # CDN
 # Don't modify the following settings unless you know how they work
 # 非必要請不要修改
@@ -865,7 +690,6 @@ CDN:
   addtoany:
   sharejs:
   sharejs_css:
-
 
   algolia_js:
   algolia_search_v4:
@@ -925,40 +749,3 @@ CDN:
   prismjs_js:
   prismjs_lineNumber_js:
   prismjs_autoloader:
-
-  # hexo-filter-gitcalendar
-# see https://akilar.top/posts/1f9c68c9/
-gitcalendar:
-  enable: true # 开关
-  priority: 1 #过滤器优先权
-  enable_page: / # 应用页面
-  # butterfly挂载容器
-  layout: # 挂载容器类型
-    type: class
-    name: recent-posts
-    index: 0
-  # volantis挂载容器
-  # layout:
-  #   type: class
-  #   name: l_main
-  #   index: 0
-  # matery挂载容器
-  # layout:
-  #   type: id
-  #   name: indexCard
-  #   index: 0
-  # mengd挂载容器
-  # layout:
-  #   type: class
-  #   name: content
-  #   index: 0
-  user: Akilarlxh #git用户名
-  apiurl: 'https://gitcalendar.akilar.top'
-  minheight:
-    pc: 280px #桌面端最小高度
-    mibile: 0px #移动端最小高度
-  color: "['#e4dfd7', '#f9f4dc', '#f7e8aa', '#f7e8aa', '#f8df72', '#fcd217', '#fcc515', '#f28e16', '#fb8b05', '#d85916', '#f43e06']" #橘黄色调
-  # color: "['#ebedf0', '#fdcdec', '#fc9bd9', '#fa6ac5', '#f838b2', '#f5089f', '#c4067e', '#92055e', '#540336', '#48022f', '#30021f']" #浅紫色调
-  # color: "['#ebedf0', '#f0fff4', '#dcffe4', '#bef5cb', '#85e89d', '#34d058', '#28a745', '#22863a', '#176f2c', '#165c26', '#144620']" #翠绿色调
-  # color: "['#ebedf0', '#f1f8ff', '#dbedff', '#c8e1ff', '#79b8ff', '#2188ff', '#0366d6', '#005cc5', '#044289', '#032f62', '#05264c']" #天青色调
-  container: .recent-post-item(style='width:100%;height:auto;padding:10px;') #父元素容器，需要使用pug语法

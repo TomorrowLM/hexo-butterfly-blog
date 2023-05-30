@@ -12,6 +12,8 @@
   npm install -g hexo-cli
   ```
 
+hexo new page music
+
 - hexo g编译
 
 - hexo s本地启动服务
