@@ -1,5 +1,6 @@
 # hexo-butterfly-blog
 
+node 12.16.1
 - 下载依赖
 
 - 下载主题
