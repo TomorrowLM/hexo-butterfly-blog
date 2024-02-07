@@ -42,7 +42,8 @@ external_link:
   exclude: ""
 filename_case: 0
 render_drafts: false
-post_asset_folder: false
+# 开启资源文件夹功能，该功能支持用户通过相对路径标签引用资源。
+post_asset_folder: true
 relative_link: false
 future: true
 highlight:

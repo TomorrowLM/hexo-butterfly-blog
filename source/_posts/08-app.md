@@ -7,6 +7,7 @@ category: uniapp,electron
 tags: [uniapp,electron]
 author: liming
 date: 25-September-2020
+
 ---
 
 # Hybrid
@@ -99,9 +100,190 @@ export default class App extends Component {
 
 # electron
 
+## 项目搭建
+
+package.json 中指定的 [`main`](https://docs.npmjs.com/cli/v7/configuring-npm/package-json#main) 文件是 Electron 应用的入口。 这个文件控制 **主程序 (main process)**，它运行在 Node.js 环境里，负责控制您应用的生命周期、显示原生界面、执行特殊操作并管理渲染器进程 (renderer processes)
+
+在 package.json 的 [`scripts`](https://docs.npmjs.com/cli/v7/using-npm/scripts) 字段中添加一个 `start` 命令，内容为 `electron .` 。 这个命令会告诉 Electron 在当前目录下寻找主脚本，并以开发模式运行它。
+
+```json
+{
+  "name": "my-electron-app",
+  "version": "1.0.0",
+  "description": "Hello World!",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jane Doe",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "23.1.3"
+  }
+}
+```
+
+
+
+### vue3
+
+- vue3+elc模板：npm create vite@latest electron-vue3-demo -- --template vue-ts
+
+- npm install electron -D
+- electron-builder打包工具：将已有的electron应用打包成msi格式和exe可执行文件的工具
+  npm install electron-builder -D
+- vite 结合 electron 的库
+  npm install vite-plugin-electron -D
+
+#### Vue3项目转electron
+
+https://www.bilibili.com/video/BV1SS4y1h7CL/?vd_source=f2241cf7d6cc0ae541b49e6fd828988b
+
+### vue2
+
+- vue-cli-plugin-electron-builder：https://nklayman.github.io/vue-cli-plugin-electron-builder/guide/configuration.html
+
+### 调试
+
+https://www.electronjs.org/zh/docs/latest/tutorial/tutorial-first-app#%E5%8F%AF%E9%80%89%E4%BD%BF%E7%94%A8-vs-code-%E8%B0%83%E8%AF%95
+
+### 依赖工具
+
+- rimraf：快速删除文件或目录工具
+
+  ```
+  在打包生成的文件夹中，会有一个app.asar，它是Electron应用程序的主业务文件压缩包，要知道项目中哪些文件被pack到安装包，可以通过解压app.asar进行查看
+  npm i asar -g
+  asar extract app.asar ./app-folder
+  ```
+
+- electron-devtools-installer：electron 开发工具
+
+- electron-updater模块检测更新
+
+### 配置
+
+#### nsis
+
+```
+createDesktopShortcut表示创建快捷方式图标
+createStartMenuShortcut 表示开始菜单图标
+```
+
+#### 加载资源
+
+https://www.jianshu.com/p/43e8a2f04422
+
+重点看resource文件夹下的app.asar文件，这个文件就是electron-builder**打包后的应用入口文件**
+
+- **添加files配置项**：**electron-builder配置项files中包含的文件都在`应用程序根目录/resources/app.asar/`目录下**。
+
+  ```
+  //electron-builder.json
+  {
+      productName: 'xxx',
+      appId: 'xxx',
+      files: ['./main', './build'], // 包含指定文件
+  }
+  ```
+
+- 它们的作用就是打包额外的文件
+
+  > 配置`extraFiles`后，**electron-builder会在打包时将`extraFiles`中指定的文件复制到打包后应用程序的`根目录下(Windows/Linux)`，或者`Content目录下(MacOS)`**
+  >
+  > 配置`extraResources`后，**electron-builder会在打包时将`extraResources`中指定的文件复制到打包后应用程序的`根目录/resources文件夹下(Windows)`，或者`Content/resources文件夹下(MacOS)`**
+
+  -  extraFiles`extraFiles`为额外文件
+  -  extraResources`extraResources`为额外资源
+
+  > 比如有这么一个需求：在用户没有网络时，为用户提供某个静态文件的下载；那就必须将这个静态文件打包进应用程序，用户下载时使用electron主进程的node程序读取这个文件返回给用户。
+
+#### 安装包放置
+
+##### 服务器
+
+```js
+第一步、在build中配置"publish"字段：
+
+"build": {
+  ...
+  "publish": [
+    {
+       "provider": "generic",
+       "url": "http://127.0.0.1:9005/" 
+    }
+  ]
+}
+第二步、在应用程序主进程中调用electron-updater模块检测更新
+```
+
+##### github
+
+```js
+第一步，依然是配置"publish"字段。
+
+"build": {
+    ...
+    "publish": ['github']
+}
+第二步、在"scripts"中配置新的指令，由于github权限控制，需要GH_TOKEN，可以在 https://github.com/settings/t... 中生成GH_TOKEN。
+
+"scripts": {
+    ...
+    "release": "cross-env GH_TOKEN=ghp_KmVD3.......W2k3Pd4vV electron-builder"
+}
+第三步、npm run release，就会在打包后，将资源上传到github，生成release draft，你在github项目中，找到这个draft，publish release就可以了。
+```
+
+##### 检查更新
+
+```js
+const { autoUpdater } = require('electron-updater')
+function checkUpdate(){
+  //检测更新
+  autoUpdater.checkForUpdates()
+  
+  //监听'error'事件
+  autoUpdater.on('error', (err) => {
+    console.log(err)
+  })
+  
+  //监听'update-available'事件，发现有新版本时触发
+  autoUpdater.on('update-available', () => {
+    console.log('found new version')
+  })
+  
+  //默认会自动下载新版本，如果不想自动下载，设置autoUpdater.autoDownload = false
+  
+  //监听'update-downloaded'事件，新版本下载完成时触发
+  autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: '应用更新',
+      message: '发现新版本，是否更新？',
+      buttons: ['是', '否']
+    }).then((buttonIndex) => {
+      if(buttonIndex.response == 0) {  //选择是，则退出程序，安装新版本
+        autoUpdater.quitAndInstall() 
+        app.quit()
+      }
+    })
+  })
+}
+
+app.on('ready', () => {
+  //每次启动程序，就检查更新
+  checkUpdate()
+}
+
+```
+
+
+
 ## 概念
 
-Electron 是利用 web 前端技术进行桌面应用开发的一套框架，它是由 Github 开发的，利用HTML、CSS、JavaScript 来构建跨平台桌面应用程序的一个开源库。Electron 通过将 Chromium 和 Node.js 合并到同一个运行时环境中，并将其打包成 Mac、Windowns、Linux 系统下的应用来实现这一目的。
+Electron 是利用 web 前端技术进行桌面应用开发的一套框架，它是由 Github 开发的，利用HTML、CSS、JavaScript 来构建跨平台桌面应用程序的一个开源库。**Electron 通过将 Chromium 和 Node.js 合并到同一个运行时环境中**，并将其打包成 Mac、Windowns、Linux 系统下的应用来实现这一目的。
 
 
 
@@ -117,7 +299,283 @@ chrome 和 chromium 用户界面几乎一摸一样，但是还是有一些差异
 - **V -- UI 层**。视图层，使用跨平台视图解决方案，对于性能要求较高的部分使用原生实现。比如 Electron
 - **C -- 平台桥接层**。介于 M 和 V 之间，桥接`通用混合层`接口，同时也为 UI 层暴露一些**平台相关**的特性。比如在桌面端，这里会通过 Node 原生模块桥接通用混合层, 同时也补充一些 Electron 缺失或不完美的功能。
 
-## 进程模型
+
+
+## Main
+
+### BrowserWindow
+
+在 Electron 中，每个窗口展示一个页面，后者可以来自本地的 HTML，也可以来自远程 URL
+
+```js
+const { app, BrowserWindow } = require('electron')
+
+const createWindow = () => {
+  const win = new BrowserWindow({
+    width: 800,
+    height: 600
+  })
+
+  win.loadFile('index.html')//将您的页面加载到新的 BrowserWindow 实例
+}
+
+app.whenReady().then(() => {
+  createWindow()
+})
+```
+
+- [app](https://www.electronjs.org/zh/docs/latest/api/app)，它着您应用程序的事件生命周期。
+- [BrowserWindow](https://www.electronjs.org/zh/docs/latest/api/browser-window)，它负责创建和管理应用窗口。
+
+> Electron 的许多核心模块都是 Node.js 的[事件触发器](https://nodejs.org/api/events.html#events)，遵循 Node.js 的异步事件驱动架构。 app 模块就是其中一个。
+>
+> 在 Electron 中，只有在 app 模块的 [`ready`](https://www.electronjs.org/zh/docs/latest/api/app#event-ready) 事件触发后才能创建 BrowserWindows 实例。 您可以通过使用 [`app.whenReady()`](https://www.electronjs.org/zh/docs/latest/api/app#appwhenready) API 来监听此事件，并在其成功后调用 `createWindow()` 方法。
+
+### app
+
+#### 关闭所有窗口时退出应用
+
+在 Windows 和 Linux 上，我们通常希望在关闭一个应用的所有窗口后让它退出。 要在您的Electron应用中实现这一点，您可以监听 app 模块的 [`window-all-closed`](https://www.electronjs.org/zh/docs/latest/api/app#event-window-all-closed) 事件，并调用 [`app.quit()`](https://www.electronjs.org/zh/docs/latest/api/app#appquit) 来退出您的应用程序。此方法不适用于 macOS。
+
+```js
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit()
+})
+```
+
+#### 没有窗口打开则打开一个窗口
+
+因为窗口无法在 `ready` 事件前创建，你应当在你的应用初始化后仅监听 `activate` 事件。 要实现这个，仅监听 `whenReady()` 回调即可。
+
+```js
+app.whenReady().then(() => {
+  createWindow()
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+})
+```
+
+## preload
+
+Electron 的主进程是一个拥有着完全操作系统访问权限的 Node.js 环境。 除了 [Electron 模组](https://www.electronjs.org/zh/docs/latest/api/app) 之外，您也可以访问 [Node.js 内置模块](https://nodejs.org/dist/latest/docs/api/) 和所有通过 npm 安装的包。 另一方面，出于安全原因，渲染进程默认跑在网页页面上，而并非 Node.js里。为了将 Electron 的不同类型的进程桥接在一起，我们需要使用被称为 **预加载** 的特殊脚本。
+
+> BrowserWindow 的预加载脚本运行在具有 HTML DOM 和 Node.js、Electron API 的有限子集访问权限的环境中
+
+**预加载脚本在渲染器加载网页之前注入。** 
+
+### 渲染器加载时的DOM展示
+
+```js
+function domReady(
+  condition: DocumentReadyState[] = ["complete", "interactive"]
+) {
+  return new Promise((resolve) => {
+    if (condition.includes(document.readyState)) {
+      resolve(true);
+    } else {
+      document.addEventListener("readystatechange", () => {
+        if (condition.includes(document.readyState)) {
+          resolve(true);
+        }
+      });
+    }
+  });
+}
+
+const safeDOM = {
+  append(parent: HTMLElement, child: HTMLElement) {
+    if (!Array.from(parent.children).find((e) => e === child)) {
+      return parent.appendChild(child);
+    }
+  },
+  remove(parent: HTMLElement, child: HTMLElement) {
+    if (Array.from(parent.children).find((e) => e === child)) {
+      return parent.removeChild(child);
+    }
+  },
+};
+
+/**
+ * https://tobiasahlin.com/spinkit
+ * https://connoratherton.com/loaders
+ * https://projects.lukehaas.me/css-loaders
+ * https://matejkustec.github.io/SpinThatShit
+ */
+function useLoading() {
+  const className = `loaders-css__square-spin`;
+  const styleContent = `
+@keyframes square-spin {
+  25% { transform: perspective(100px) rotateX(180deg) rotateY(0); }
+  50% { transform: perspective(100px) rotateX(180deg) rotateY(180deg); }
+  75% { transform: perspective(100px) rotateX(0) rotateY(180deg); }
+  100% { transform: perspective(100px) rotateX(0) rotateY(0); }
+}
+.${className} > div {
+  animation-fill-mode: both;
+  width: 50px;
+  height: 50px;
+  background: #fff;
+  animation: square-spin 3s 0s cubic-bezier(0.09, 0.57, 0.49, 0.9) infinite;
+}
+.app-loading-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #282c34;
+  z-index: 9;
+}
+    `;
+  const oStyle = document.createElement("style");
+  const oDiv = document.createElement("div");
+
+  oStyle.id = "app-loading-style";
+  oStyle.innerHTML = styleContent;
+  oDiv.className = "app-loading-wrap";
+  oDiv.innerHTML = `<div class="${className}"><div></div></div>`;
+
+  return {
+    appendLoading() {
+      safeDOM.append(document.head, oStyle);
+      safeDOM.append(document.body, oDiv);
+    },
+    removeLoading() {
+      safeDOM.remove(document.head, oStyle);
+      safeDOM.remove(document.body, oDiv);
+    },
+  };
+}
+
+const { appendLoading, removeLoading } = useLoading();
+domReady().then(appendLoading);
+
+setTimeout(removeLoading, 4999);
+```
+
+### contextIsolation
+
+`contextIsolation`定义上下文隔离
+
+在一般的我们的前端项目中，渲染html页面的js中是运行在浏览器环境中的，而在Electron中，我们会发现Node中模块在其中也可以使用。（同时需要配置`nodeIntegration`为`true`）这样的话，在一个复杂项目中，就可以造成污染，重名等问题。
+
+于是Electron特意增加了上下文隔离这一概念。开启上下文隔离的条件是`contextIsolation`属性设置为`true`
+
+一旦开启该条件，渲染页面的js中无法引入Electron和Node的各种模块。因此，如果想在其中使用，需要配置preload.js，使用`contextBridge`（上下文桥，这个名字不错）来暴露全局接口到渲染页面的脚本中
+
+
+
+使用 `contextBridge` 和 `preload`：通过 `contextBridge` 和 `preload` 机制，可以安全地将部分 Electron API 暴露给渲染进程，而无需开启 `nodeIntegration`。这种方式更安全，能够限制渲染进程的权限，并减少潜在的安全风险。你可以在主进程中使用 `contextBridge.exposeInMainWorld` 方法将需要的 Electron API 暴露给渲染进程，然后在渲染进程中使用 `window.api` 来访问这些 API。
+
+### contextBridge通信
+
+如果你想为渲染器添加需要特殊权限的功能，可以通过 [contextBridge](https://www.electronjs.org/zh/docs/latest/api/context-bridge) 接口定义 [全局对象](https://developer.mozilla.org/en-US/docs/Glossary/Global_object)。
+
+```js
+//创建一个将应用中的 Chrome、Node、Electron 版本号暴露至渲染器的预加载脚本
+
+const { contextBridge } = require('electron')
+
+contextBridge.exposeInMainWorld('versions', {
+  node: () => process.versions.node,
+  chrome: () => process.versions.chrome,
+  electron: () => process.versions.electron
+  // 除函数之外，我们也可以暴露变量
+})
+
+//安全
+contextBridge.exposeInMainWorld('versions', {
+   ping: () => ipcRenderer.invoke('ping')
+})
+//可以注意到我们使用了一个辅助函数来包裹 ipcRenderer.invoke('ping') 调用，而并非直接通过 context bridge 暴露 ipcRenderer 模块。 你永远都不会想要通过预加载直接暴露整个 ipcRenderer 模块。 这将使得你的渲染器能够直接向主进程发送任意的 IPC 信息，会使得其成为恶意代码最强有力的攻击媒介。
+```
+
+```js
+//为了将脚本附在渲染进程上，在 BrowserWindow 构造器中使用 webPreferences.preload 传入脚本的路径。
+const win = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js')
+    }
+  })
+```
+
+```js
+const information = document.getElementById('info')
+information.innerText = `This app is using Chrome (v${window.versions.chrome()}), Node.js (v${window.versions.node()}), and Electron (v${window.versions.electron()})`
+```
+
+> 虽然预加载脚本与其所附着的渲染器在共享着一个全局 `window` 对象，但您并不能从中直接附加任何变动到 `window` 之上，因为 [`contextIsolation`](https://www.electronjs.org/zh/docs/latest/tutorial/context-isolation) 是默认的。
+>
+> 语境隔离（Context Isolation）意味着预加载脚本与渲染器的主要运行环境是隔离开来的，以避免泄漏任何具特权的 API 到您的网页内容代码中。
+>
+> preload.js
+>
+> ```js
+> window.myAPI = {
+> 	desktop: true
+> }
+> ```
+>
+> renderer.js
+>
+> ```js
+> console.log(window.myAPI)
+> ```
+
+### 与Typescript一同使用
+
+在这个 `preload.ts` 脚本中：
+
+preload.ts
+
+```typescript
+contextBridge.exposeInMainWorld('electronAPI', {
+  loadPreferences: () => ipcRenderer.invoke('load-prefs')
+})
+```
+
+您可以创建一个 `renderer.d.ts` 类型声明文件，并且全局增强 `Window` 接口。
+
+renderer.d.ts
+
+```typescript
+export interface IElectronAPI {
+  loadPreferences: () => Promise<void>,
+}
+
+declare global {
+  interface Window {
+    electronAPI: IElectronAPI
+  }
+}
+```
+
+以上所做皆是为了确保在您编写渲染进程的脚本时， TypeScript 编译器将会知晓`electronAPI`合适地在您的全局`window`对象中
+
+renderer.ts
+
+```typescript
+window.electronAPI.loadPreferences()
+```
+
+## IPC进程间通信
+
+> 官方文档：
+>
+> [ipcMain](https://link.juejin.cn?target=https%3A%2F%2Fwww.electronjs.org%2Fdocs%2Fapi%2Fipc-main)从主进程到渲染进程的异步通信。`ipcMain` 是一个 [EventEmitter](https://link.juejin.cn/?target=https%3A%2F%2Fnodejs.org%2Fapi%2Fevents.html%23events_class_eventemitter) 的实例。 当在主进程中使用时，它处理从渲染器进程（网页）发送出来的**异步和同步**信息。 从渲染器进程发送的消息将被发送到该模块。
+>
+> [ipcRenderer](https://link.juejin.cn?target=https%3A%2F%2Fwww.electronjs.org%2Fdocs%2Fapi%2Fipc-renderer)：从渲染器进程到主进程的异步通信。`ipcRenderer` 是一个 [EventEmitter](https://link.juejin.cn/?target=https%3A%2F%2Fnodejs.org%2Fapi%2Fevents.html%23events_class_eventemitter) 的实例。 你可以使用它提供的一些方法从渲染进程 (web 页面) 发送**同步或异步**的消息到主进程。 也可以接收主进程回复的消息。
+>
+> [webContents](https://link.juejin.cn?target=https%3A%2F%2Fwww.electronjs.org%2Fdocs%2Fapi%2Fweb-contents%23contentssendchannel-args)
+
+### 进程模型
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/94160f9fbbdc4ce0a9bab4e95689f54a.png)
 
@@ -133,27 +591,214 @@ chrome 和 chromium 用户界面几乎一摸一样，但是还是有一些差异
 
 - 除此之外还有 GPU 进程、扩展进程等等。
 
+### ipcMain
+
+[ipcMain](https://link.juejin.cn?target=https%3A%2F%2Fwww.electronjs.org%2Fdocs%2Fapi%2Fipc-main)从主进程到渲染进程的异步通信。`ipcMain` 是一个 [EventEmitter](https://link.juejin.cn/?target=https%3A%2F%2Fnodejs.org%2Fapi%2Fevents.html%23events_class_eventemitter) 的实例。 当在主进程中使用时，它处理从渲染器进程（网页）发送出来的**异步和同步**信息。 从渲染器进程发送的消息将被发送到该模块。
+
+- 同步
+
+  **ipcMain.on(channel, listener)** 主进程监听来自渲染进程的通信，
+
+  **ipcMain.once(channel, listener)**只监听一次事件
+
+  **ipcMain.removeListener(channel, listener)** 参数跟定义时的监听函数一致才能被移除
+
+  **ipcMain.removeAllListeners([channel])**
+
+- 异步的来回通信
+
+  **ipcMain.handle(channel, listener)** 主进程的监听函数
+
+  **ipcRenderer.invoke(channel, ...args)** 渲染进程的发送消息的函数
+
+  **ipcMain.handleOnce(channel, listener)** 单个执行一次
+
+  **ipcMain.removeHandler(channel)**移除监听函数
 
 
-## IPC进程间通信
 
-> 官方文档：
->
-> [ipcMain](https://link.juejin.cn?target=https%3A%2F%2Fwww.electronjs.org%2Fdocs%2Fapi%2Fipc-main)
->
-> [ipcRenderer](https://link.juejin.cn?target=https%3A%2F%2Fwww.electronjs.org%2Fdocs%2Fapi%2Fipc-renderer)
->
-> [webContents](https://link.juejin.cn?target=https%3A%2F%2Fwww.electronjs.org%2Fdocs%2Fapi%2Fweb-contents%23contentssendchannel-args)
+```
+send 和 on
+//主进程
+  ipcMain.on('haha', (event,arg) => {
+    event.reply('heihei','message from main process~')
+  })
 
-`ipcRenderer` 是一个 [EventEmitter](https://nodejs.org/api/events.html#events_class_eventemitter) 的实例
+//渲染进程
+  ipcRenderer.send('haha', '你好啊')
+  ipcRenderer.on('heihei', (event, arg) => {
+        event.reply('heihei','message from main process~') //on 监听事件， send 发送事件，通过 event.reply （只有主进程的event有）可以回复这次通信的另一方
+  })
+  
+  invoke 和 handle
+  这组API跟上面的区别是，invoke执行后返回一个promise，then里可以拿到handle返回的结果
+  async function handleFileOpen () {
+  const { canceled, filePaths } = await dialog.showOpenDialog()
+  if (!canceled) {
+    return filePaths[0]
+  }
+}
+  ipcMain.handle('dialog:openFile', handleFileOpen)
+  
+  btn.addEventListener('click', async () => {
+  const filePath = await window.electronAPI.openFile() //filePaths[0]
+  filePathElement.innerText = filePath
+})
+```
+
+
+
+### 渲染进程->主进程并返回数据
+
+```js
+//preload.js
+const { contextBridge, ipcRenderer } = require('electron')
+
+contextBridge.exposeInMainWorld('versions', {
+  ping: () => ipcRenderer.invoke('ping')
+  // 除函数之外，我们也可以暴露变量
+})
+```
+
+```js
+//main.js
+const { app, BrowserWindow, ipcMain } = require('electron')
+const path = require('path')
+
+const createWindow = () => {
+  const win = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js')
+    }
+  })
+  win.loadFile('index.html')
+}
+app.whenReady().then(() => {
+  ipcMain.handle('ping', () => 'pong')
+  createWindow()
+})
+```
+
+```js
+//renderer.js
+const func = async () => {
+  const response = await window.versions.ping()
+  console.log(response) // 打印 'pong'
+}
+
+func()
+```
 
 ### 渲染器进程到主进程（单向）
 
 **渲染线程** 到 **主线程** 需要通过  `ipcRenderer.send`发送  ---> `ipcMain.on`来监听
 
+> ipcMain.on 和 ipcRenderer.send
+> 示例描述：从 渲染进程中操作主进程的关闭操作，也就是从渲染进程中关闭electron
 
+（1）主进程：electron/main.js
+
+```
+const { ipcMain } = require('electron');
+ipcMain.on('operation-window',function(event,operationType){
+    switch(operationType){
+        case "max"://窗口 最大化
+            win.maximize()
+            break;
+        case 'restoreDown'://窗口 向下还原
+             win.unmaximize()
+            break;
+        case "min"://窗口 最小化
+             win.minimize()
+            break;
+        case 'close'://窗口 关闭
+             win.close()
+        break;
+    }
+})
+
+```
+
+（2）预加载文件：electron/preload.js
+
+```
+//向渲染器进程暴露一个全局的 window.electronAPI 变量。
+const { contextBridge, ipcRenderer } = require('electron');
+contextBridge.exposeInMainWorld('electronAPI', {
+    operationWindow: (operationType) => ipcRenderer.send('operation-window', operationType),
+})
+```
+
+
+（3）渲染进程文件：xxx.vue
+
+```
+<div>
+    <button @click="onClickClose">关闭窗口</button>
+</div>
+<script lang="ts" setup>
+    const onClickClose = () => {
+        if(window.electronAPI && window.electronAPI.operationWindow){
+            window.electronAPI.operationWindow('close')                            
+        }
+    }
+</script>
+```
 
 ### 渲染器进程到主进程（双向）
+
+> ipcMain.handle 和 ipcRenderer.invoke
+> 示例描述：从渲染进程中 调用 主进程的弹窗选择文件后返回文件路径给 渲染进程
+>
+> - 在主进程中，我们将创建一个 handleFileOpen() 函数，它调用electron的 dialog.showOpenDialog 并返回用户选择的文件路径值。
+> - 每当渲染器进程通过 dialog:openFile 通道发送 ipcRender.invoke 消息时，此函数被用作一个回调。然后，返回值将作为一个 Promise 返回到最初的 invoke 调用。
+
+1）主进程：electron/main.js
+
+```
+const { ipcMain,dialog } = require('electron');
+async function handleFileOpen() {
+  const { canceled, filePaths } = await dialog.showOpenDialog()//调用electron的打开文件弹窗
+  if (canceled) {
+    return
+  } else {
+    return filePaths[0] // 返回文件名给渲染进程
+  }
+}
+ipcMain.handle('dialog:openFile',handleFileOpen)
+```
+
+
+（2）预加载文件：electron/preload.js
+
+```
+import { contextBridge, ipcRenderer } from 'electron'
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  openFile: () => ipcRenderer.invoke('dialog:openFile')
+})
+```
+
+
+（3）渲染进程文件：xxx.vue
+
+```
+<div>
+    <button @click="onSelectFile">选择文件</button>
+</div>
+<script lang="ts" setup>
+    const onSelectFile = async () => {
+        if(window.electronAPI && window.electronAPI.openFile){
+            const filePath = await window.electronAPI.openFile()  
+            console.log("选择的文件路径是：" + filePath)                          
+        }
+    }
+</script>
+```
+
+
 
 
 
@@ -163,21 +808,270 @@ chrome 和 chromium 用户界面几乎一摸一样，但是还是有一些差异
 
 
 
+### Electron 中的消息端口Remote 模块
 
-
-## Remote 模块
-
-在渲染进程里（比如`index.html`里面加载了一些**js文件**，那里面的**js**如果要使用到 **BrowserWindow** 这些属性的话就必须使用 `remote`）
-
-使用 `remote` 模块, 你可以调用 `main` **进程对象的方法**
+在渲染进程里如果要使用到 **BrowserWindow** 这些属性的话就必须使用 `remote`，使用 `remote` 模块, 你可以调用 `main` **进程对象的方法**
 
 
 
-## 菜单
+## 配置
+
+### 窗口
+
+https://juejin.cn/post/6888907382806544392#heading-12
+
+### 顶部标题栏配置
+
+```
+new BrowserWindow({
+    icon: path.join(__static,"./zero.ico"),  
+})
+```
+
+标题栏title和html中的title是一样的
+
+#### 自定义
+
+https://www.toutiao.com/article/7146401504377799180/?wid=1690858382324
+
+```
+new BrowserWindow({
+    frame: false // 去掉默认的标题栏
+})
+```
+
+```vue
+<template>
+  <div id="title-bar">
+    <div id="title">My Application</div>
+    <div id="buttons">
+      <i class="el-icon-minus mr-10" id="minimize"></i>
+      <div class="button" id="maximize"></div>
+      <i class="el-icon-close" id="close"></i>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
+@Component({})
+export default class VueCom extends Vue {
+  mounted() {
+    const remote = require('electron').remote;
+
+    document.getElementById('minimize').addEventListener('click', () => {
+      remote.getCurrentWindow().minimize();
+    });
+
+    document.getElementById('maximize').addEventListener('click', () => {
+      const win = remote.getCurrentWindow();
+      if (win.isMaximized()) {
+        win.unmaximize();
+      } else {
+        win.maximize();
+      }
+    });
+
+    document.getElementById('close').addEventListener('click', () => {
+      remote.app.quit();
+    });
+  }
+}
+</script>
+<style lang="scss">
+#title-bar {
+  -webkit-app-region: drag;
+  height: 28px;
+  // background-color: #333;
+  // color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 18px;
+}
+#title-bar #buttons {
+  display: flex;
+}
+#title-bar .button {
+  width: 14px;
+  height: 14px;
+  margin-left: 10px;
+}
+// #title-bar #minimize {
+//   background-color: #f0ad4e;
+// }
+// #title-bar #maximize {
+//   background-color: #5cb85c;
+// }
+// #title-bar #close {
+//   background-color: #d9534f;
+// }
+</style>
+
+```
+
+
+
+### 菜单
 
 https://www.misterma.com/archives/896/
 
+https://zhuanlan.zhihu.com/p/426436147
+
+#### 菜单栏图标
+
+```
+{
+label: "显示主窗口", 
+icon: path.join(__static,"./logo.png"),      
+click: function() {
+mainWindow.show();         
+} //打开相应页面
+},
+{//打开相应页面
+label: "检查更新",
+type:'checkbox',
+checked: true,
+click: function() { } 
+},
+```
+
+### 托盘
+
+#### 系统托盘图标
+
+```
+let iconPath = path.join(__static, "./zero.ico");
+let appTray = new Tray(iconPath);
+
+
+win.on('close', (event) => {
+    if (
+      dialog.showMessageBoxSync(win, {
+        type: 'info',
+        buttons: ['最小化到托盘', '直接退出'],
+        title: '提示',
+        message: '确定要退出吗？',
+        defaultId: 0,
+        cancelId: 1
+      }) === 0
+    ) {
+      event.preventDefault();
+      win.hide();
+    } else {
+      app.exit();
+    }
+  });
+```
+
+#### 系统托盘自动消失
+
+https://blog.csdn.net/liu19721018/article/details/109046186
+
+### dialog
+
+```
+ipcMain.on('logout',(e)=>{
+    dialog.showMessageBox({
+      type: 'info',
+      noLink:true, // windows 下的传统样式
+      title: '提示信息',
+      icon:path.join(__static,"./zero.ico"),
+      defaultId: 0,
+      message:"确定要退出登录吗？",
+      buttons:['确定','取消']
+    },(index) => {
+      if(index === 1){
+        // 什么都不做
+        e.preventDefault(); // 阻止默认行为            
+      }else{
+        mainWindow.loadURL(winURL)
+        mainWindow.setSize(400,400);
+      }
+    });
+  })
+
+```
+
 ## API
+
+### 生命周期
+
+ready: app 初始化完成
+
+dom-ready: 一个窗口中的文本加载完成
+
+did-finish-load: 导航完成时触发
+
+closed: 当窗口关闭时触发，此时应删除窗口引用
+
+window-all-closed: 所有窗口都被关闭时触发
+
+
+
+#### 退出
+
+- before-quit: 在关闭窗口之前触发
+
+- will-quit: 在窗口关闭并且应用退出时触发
+- quit: 当所有窗口被关闭时触发
+
+退出方式
+
+- 默认退出
+
+  - 如果没有监听`window-all-closed`事件并且所有窗口都关闭了，默认的行为是退出程序
+
+  - 如果监听了`window-all-closed`事件，那么在你的所有窗口都关闭时会去执行
+
+- quit退出
+
+  当开发者调用了 app.quit()，如果此时所有窗口已经关闭，直接触发quit事件；否则Electron 会首先触发before-quit，然后开始关闭所有的窗口并且触发 will-quit事件，在这种情况下 window-all-closed 事件不会被触发，所以你可以放心在window-all-closed里使用app.quit()，而不用担心会出现无限递归。
+
+  调用app.quit()并不能保证程序一定会退出，在before-quit，will-quit中调用event.preventDefault()或者在window的close事件回调函数中阻止窗口关闭，都可以使程序退出失败。也就是说quit不是独裁者，更像是众议院，老大提出退出操作，然后众人商量，退出的愿望可能被否决
+
+- exit退出
+
+  既然有`app.quit`这种温和的退出方式，那么也会有更加粗暴的退出方案，那就是`app.exit`。
+
+  与`quit`这种民主相比，`exit`更像是独裁者，他会直接执行退出操作，不跟任何人商量，只要保证你的程序中的逻辑合理，是完全可以拿来使用的
+
+
+
+### process
+
+ [`process.platform`](https://nodejs.org/api/process.html#process_process_platform) 变量，您可以针对特定平台运行特定代码。 请注意，Electron 目前只支持三个平台：`win32` (Windows), `linux` (Linux) 和 `darwin` (macOS) 。
+
+### cookies
+
+> electron webview clear cookies
+
+Electron Webview 是 Electron 框架中的一个标签，用于在桌面应用中显示网页内容。要清除 Webview 中的 cookies，可以使用以下方法之一：
+
+1. 在 Webview 加载网页之前，使用 `session.defaultSession.cookies.remove()` 方法删除所有 cookies。例如：
+
+```lua
+lua复制代码const {session} = require('electron')
+
+session.defaultSession.cookies.remove('http://example.com', 'CookieName', (error) => {
+  if (error) console.error(error)
+})
+```
+
+1. 在 Webview 加载网页之后，使用 `webview.getWebContents().session.clearStorageData()` 方法清除所有本地存储数据，包括 cookies。例如：
+
+```go
+go复制代码const {webContents} = require('electron')
+
+webview.getWebContents().session.clearStorageData({
+  storages: ['cookies']
+}, (error) => {
+  if (error) console.error(error)
+})
+```
+
+注意：需要确保在调用这些方法之前已经加载了 Webview 标签。
 
 ### 网站信息
 
@@ -192,6 +1086,8 @@ app.setAboutPanelOptions(options)
   - authors string[] (可选) Linux - 应用程序作者列表。
   - website string (可选) Linux - 应用程序的网站。
   - iconPath string (可选) Linux Windows - 以JPEG 或 PNG 文件格式为应用程序图标路径。 在 Linux 上，将显示为 64x64 像素，同时保留纵横比。
+
+
 
 ### 事件
 
@@ -236,18 +1132,9 @@ mainWindow.webContents.on('dom-ready',()=>{
 	console.log("dom-ready")
 })
 
-### 生命周期
 
-ready: app 初始化完成
-dom-ready: 一个窗口中的文本加载完成
-did-finish-load: 导航完成时触发
-closed: 当窗口关闭时触发，此时应删除窗口引用
-window-all-closed: 所有窗口都被关闭时触发
-before-quit: 在关闭窗口之前触发
-will-quit: 在窗口关闭并且应用退出时触发
-quit: 当所有窗口被关闭时触发
 
-# uniapp手册
+# uniapp
 
 ## 目录结构
 
@@ -455,6 +1342,7 @@ if(process.env.NODE_ENV === 'development'){
     alert("只有h5平台才有alert方法")
 // #endif
 ```
+
 - 运行期判断 运行期判断是指代码已经打入包中，仍然需要在运行期判断平台，此时可使用 `uni.getSystemInfoSync().platform` 判断客户端环境是 Android、iOS 还是小程序开发工具（在百度小程序开发工具、微信小程序开发工具、支付宝小程序开发工具中使用 `uni.getSystemInfoSync().platform` 返回值均为 devtools）。
 
   ```js
